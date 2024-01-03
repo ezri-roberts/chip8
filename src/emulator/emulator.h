@@ -11,6 +11,8 @@ typedef struct {
 	uint16_t I;
 	uint16_t pc; // Currently executing address.
 	
+	uint16_t opcode; // The current opcode;
+	
 	uint16_t stack[16];
 	uint8_t sp; // Points to top of stack.
 	
@@ -31,5 +33,7 @@ typedef struct {
 void emulatorInit(Emulator *em);
 void emulatorCycle(Emulator *em);
 void emulatorLoad(Emulator *em, const char *name);
+
+void opcodeClearOrReturn(Emulator *em);
 
 #endif // !EMULATOR_H

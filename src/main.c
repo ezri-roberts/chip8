@@ -15,6 +15,10 @@ int main(int argc, char *argv[]) {
 	// Draw.
 	// Keys.
 	// End loop.
+	
+	while(emulator.pc < 4096) {
+		emulatorCycle(&emulator);
+	}
 
 	// const int width = 800;
 	// const int height = 450;
