@@ -3,7 +3,6 @@
 
 #include <stdint.h>
 #include <raylib.h>
-#include "../emulator/emulator.h"
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
@@ -18,6 +17,7 @@ typedef struct {
 } Renderer;
 
 void rendererInit(Renderer *renderer);
-void rendererUpdate(Renderer *renderer, Emulator *emulator);
+void rendererUpdate(Renderer *renderer, unsigned char buffer[2048]);
+void drawFrameBuffer(unsigned char buffer[2048]);
 
 #endif // !RENDERER_H

@@ -4,6 +4,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#include "../renderer/renderer.h"
+
 typedef struct {
 
 	unsigned char memory[4096]; // 4KB / 4096 bytes of RAM.
@@ -20,6 +22,9 @@ typedef struct {
 	
 	uint16_t delayTimer;
 	uint16_t soundTimer;
+
+	Renderer renderer;
+	bool stepMode;
 	
 } Emulator;
 
@@ -30,12 +35,14 @@ typedef struct {
 	* it should be padded so any instructions following it will be properly situated in RAM.
 */
 
-void emulatorInit(Emulator *em);
+void emulatorInit(Emulator *em, bool stepMode);
 void emulatorLoad(Emulator *em, const char *name);
 void emulatorCycle(Emulator *em);
-void emulatorDraw(Emulator *em);
-void frameBufferPut(Emulator *em, uint8_t x, uint8_t y);
+void emulatorUpate(Emulator *em);
 
 void opcodeClearOrReturn(Emulator *em);
+
+void frameBufferClear(Emulator *em);
+void frameBufferPut(Emulator *em, uint8_t x, uint8_t y);
 
 #endif // !EMULATOR_H

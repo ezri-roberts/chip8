@@ -1,27 +1,13 @@
 #include "emulator/emulator.h"
-#include "renderer/renderer.h"
 
 int main(int argc, char *argv[]) {
 
-	Renderer renderer;
 	Emulator emulator;
 
-	rendererInit(&renderer);
-
-	emulatorInit(&emulator);
+	emulatorInit(&emulator, true);
 	emulatorLoad(&emulator, "TETRIS.ch8");
-	//
-	// Emulation loop.
-	// Emulation cycle.
-	// Draw.
-	// Keys.
-	// End loop.
-	
-	// while(emulator.pc < 4096) {
-	// 	emulatorCycle(&emulator);
-	// }
-	
-	rendererUpdate(&renderer, &emulator);
+
+	emulatorUpate(&emulator);
 
 	return 0;
 }

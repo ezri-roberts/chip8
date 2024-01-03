@@ -3,23 +3,29 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+void frameBufferClear(Emulator *em) {
+	memset(em->frameBuffer, 0, sizeof(em->frameBuffer));
+}
 
 void frameBufferPut(Emulator *em, uint8_t x, uint8_t y) {
 	int index = y * 64 + x;
 	em->frameBuffer[index] = 1;
 }
 
-void emulatorInit(Emulator *em) {
+void emulatorInit(Emulator *em, bool stepMode) {
+
+	rendererInit(&em->renderer);
 
 	em->pc = 0x200;
 	em->opcode = 0;
 	em->I = 0;
 	em->sp = 0;
 
-	for (int i=0; i<2048; i++) {
-		em->frameBuffer[i] = 0;
-	}
+	frameBufferClear(em);
 
+	// Test grid.
 	for (int x=0; x<64; x+=2) {
 		for (int y=0; y<32; y+=2) {
 			frameBufferPut(em, x, y);
@@ -27,47 +33,41 @@ void emulatorInit(Emulator *em) {
 	}
 
 	// Clear Stack
+	memset(em->stack, 0, sizeof(em->stack));
 	// Clear registers V0-VF
+	memset(em->V, 0, sizeof(em->V));
 	// Clear memory.
-	
+	memset(em->memory, 0, sizeof(em->memory));
+
 	// Load fontset
+	// static uint8_t font[80] = {
+	// 	0xF0, 0x90, 0x90, 0x90, 0xF0, /* 0 */
+	// 	0x20, 0x60, 0x20, 0x20, 0x70, /* 1 */
+	// 	0xF0, 0x10, 0xF0, 0x80, 0xF0, /* 2 */
+	// 	0xF0, 0x10, 0xF0, 0x10, 0xF0, /* 3 */
+	// 	0x90, 0x90, 0xF0, 0x10, 0x10, /* 4 */
+	// 	0xF0, 0x80, 0xF0, 0x10, 0xF0, /* 5 */
+	// 	0xF0, 0x80, 0xF0, 0x90, 0xF0, /* 6 */
+	// 	0xF0, 0x10, 0x20, 0x40, 0x40, /* 7 */
+	// 	0xF0, 0x90, 0xF0, 0x90, 0xF0, /* 8 */
+	// 	0xF0, 0x90, 0xF0, 0x10, 0xF0, /* 9 */
+	// 	0xF0, 0x90, 0xF0, 0x90, 0x90, /* A */
+	// 	0xE0, 0x90, 0xE0, 0x90, 0xE0, /* B */
+	// 	0xF0, 0x80, 0x80, 0x80, 0xF0, /* C */
+	// 	0xE0, 0x90, 0x90, 0x90, 0xE0, /* D */
+	// 	0xF0, 0x80, 0xF0, 0x80, 0xF0, /* E */
+	// 	0xF0, 0x80, 0xF0, 0x80, 0x80, /* F */
+	// };
+	
 	// for (int i = 0; i < 80; ++i) {
 	// 	emulator->memory[i] = fontset[i];
 	// }
 	
 	// Reset timers.
+	em->delayTimer = 0;
+	em->soundTimer = 0;
 
-}
-
-void emulatorDraw(Emulator *em) {
-
-	// for (int i=0; i<2048; i++) {
-	// 	if (em->frameBuffer[i] == 1) {
-	//
-	// 		int x = i%64;
-	// 		int y = i/32;
-	//
-	// 		DrawRectangle(x, y, 1, 1, RAYWHITE);
-	// 	}
-	// }
-	
-	for (int x=0; x<64; x++) {
-		for (int y=0; y<32; y++) {
-			if (em->frameBuffer[y * 64 + x]) {
-				DrawRectangle(x, y, 1, 1, RAYWHITE);
-			}
-		}
-	}
-
-	// for (int y = 0; y < 32; y++) {
-	// 	for (int x = 0; x < 64; x++) {
-	// 		if (em->frameBuffer[y][x] == 1) {
-	// 			// printf("PIXEL %d, %d\n", x, y);
-	// 			// DrawPixel(x, y, RAYWHITE);
-	// 			DrawRectangle(x, y, 1, 1, RAYWHITE);
-	// 		}
-	// 	}
-	// }
+	em->stepMode = stepMode;
 }
 
 void emulatorLoad(Emulator *em, const char *name) {
@@ -75,22 +75,21 @@ void emulatorLoad(Emulator *em, const char *name) {
 	const int bufferSize = 1000;
 
 	FILE *file;
-	char buffer[bufferSize];
+	unsigned char buffer[bufferSize];
 
 	file = fopen(name, "rb");
 
 	if (file == NULL) {
-		perror("Error opening file.");
-		//return 1;
+		printf("Error reading file '%s'", name);
+		exit(1);
 	}
 
 	size_t bytesRead = fread(buffer, 1, sizeof(buffer), file);
-	if (bytesRead > 0) {
-		printf("Read %zu bytes from the file.\n", bytesRead);
-	}
+	printf("Read %zu bytes from file '%s'\n", bytesRead, name);
 
 	fclose(file);
 
+	// Load into memory.
 	for (int i = 0; i < bufferSize; i++) {
 		em->memory[i+512] = buffer[i];
 	}
@@ -119,42 +118,75 @@ void emulatorCycle(Emulator *em) {
 
 	em->opcode = em->memory[em->pc] << 8 | em->memory[em->pc + 1];
 
-	uint16_t decoded = em->opcode & 0xF000;
-	switch (decoded) {
+	// uint16_t decoded = em->opcode & 0xF000;
+	
+	// Extract the different components of the opcode.
+	uint16_t first = (em->opcode & 0xF0000); // e.g. '5'xy0
+	uint16_t x     = (em->opcode & 0x0F00);  // e.g. 5'x'y0
+	uint16_t y     = (em->opcode & 0x00F0);  // e.g. 5x'y'0
+	uint16_t last  = (em->opcode & 0x000F);  // e.g. 5xy'0'
+	uint16_t nnn   = (em->opcode & 0x0FFF);  // e.g. 1'nnn' 
+	uint16_t kk    = (em->opcode & 0x00FF);  // e.g. 6x'kk'
 
-		case 0x0000:
-			opcodeClearOrReturn(em);
-		break;
-		case 0x1000:
-			showCode(em, decoded, "Jumps to address NNN.");
-		break;
-		case 0x2000:
-			showCode(em, decoded, "Calls subroutine at NNN.");
-		break;
-		case 0x3000:
-			showCode(em, decoded, "Skips the next instruction if VX equals NN.");
-		break;
-		case 0x4000:
-			showCode(em, decoded, "Skips the next instruction if VX does not equal NN.");
-		break;
-		case 0x5000:
-			showCode(em, decoded, "Skips the next instruction if VX equals VY.");
-		break;
-		case 0x6000:
-			showCode(em, decoded, "Sets VX to NN.");
-		break;
-		case 0x7000:
-			showCode(em, decoded, "Adds NN to VX.");
-		break;
-		case 0xA000:
-			showCode(em, decoded, "Sets I to the address NNN.");
-		break;
-
-		default:
-			printf("UNKNOWN OPCODE: %X, %X\n", em->opcode, decoded);
-	}
+	// switch (decoded) {
+	//
+	// 	case 0x0000:
+	// 		opcodeClearOrReturn(em);
+	// 	break;
+	// 	case 0x1000:
+	// 		showCode(em, decoded, "JP addr.");
+	// 	break;
+	// 	case 0x2000:
+	// 		showCode(em, decoded, "CALL addr.");
+	// 	break;
+	// 	case 0x3000:
+	// 		showCode(em, decoded, "SE Vx, byte.");
+	// 	break;
+	// 	case 0x4000:
+	// 		showCode(em, decoded, "SNE Vx, byte.");
+	// 	break;
+	// 	case 0x5000:
+	// 		showCode(em, decoded, "SE Vx, Vy.");
+	// 	break;
+	// 	case 0x6000:
+	// 		showCode(em, decoded, "LD Vx, byte.");
+	// 	break;
+	// 	case 0x7000:
+	// 		showCode(em, decoded, "ADD Vx, byte.");
+	// 	break;
+	//
+	// 	default:
+	// 		showCode(em, decoded, "Unknown opcode.");
+	// }
 
 	em->pc += 2;
 
+}
+
+bool shouldCycle(Emulator *em) {
+
+	if (!em->stepMode) {
+		return true;
+	}
+
+	if (IsKeyPressed(KEY_ENTER)) {
+		return true;
+	}
+
+	return false;
+}
+
+void emulatorUpate(Emulator *em) {
+
+	while (!WindowShouldClose()) {
+
+		if (shouldCycle(em)) {
+			emulatorCycle(em);
+		}
+
+		rendererUpdate(&em->renderer, em->frameBuffer);
+	}
+
+	CloseWindow();
 }
 
