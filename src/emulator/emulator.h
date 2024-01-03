@@ -16,7 +16,7 @@ typedef struct {
 	uint16_t stack[16];
 	uint8_t sp; // Points to top of stack.
 	
-	unsigned char display[64 * 32]; // 64x32-pixel monochrome display.
+	unsigned char frameBuffer[64*32]; // 64x32-pixel monochrome display.
 	
 	uint16_t delayTimer;
 	uint16_t soundTimer;
@@ -31,8 +31,10 @@ typedef struct {
 */
 
 void emulatorInit(Emulator *em);
-void emulatorCycle(Emulator *em);
 void emulatorLoad(Emulator *em, const char *name);
+void emulatorCycle(Emulator *em);
+void emulatorDraw(Emulator *em);
+void frameBufferPut(Emulator *em, uint8_t x, uint8_t y);
 
 void opcodeClearOrReturn(Emulator *em);
 

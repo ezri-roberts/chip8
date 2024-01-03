@@ -1,7 +1,13 @@
 #include "emulator.h"
+#include <raylib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+void frameBufferPut(Emulator *em, uint8_t x, uint8_t y) {
+	int index = y * 64 + x;
+	em->frameBuffer[index] = 1;
+}
 
 void emulatorInit(Emulator *em) {
 
@@ -10,7 +16,16 @@ void emulatorInit(Emulator *em) {
 	em->I = 0;
 	em->sp = 0;
 
-	// Clear Display
+	for (int i=0; i<2048; i++) {
+		em->frameBuffer[i] = 0;
+	}
+
+	for (int x=0; x<64; x+=2) {
+		for (int y=0; y<32; y+=2) {
+			frameBufferPut(em, x, y);
+		}
+	}
+
 	// Clear Stack
 	// Clear registers V0-VF
 	// Clear memory.
@@ -22,6 +37,37 @@ void emulatorInit(Emulator *em) {
 	
 	// Reset timers.
 
+}
+
+void emulatorDraw(Emulator *em) {
+
+	// for (int i=0; i<2048; i++) {
+	// 	if (em->frameBuffer[i] == 1) {
+	//
+	// 		int x = i%64;
+	// 		int y = i/32;
+	//
+	// 		DrawRectangle(x, y, 1, 1, RAYWHITE);
+	// 	}
+	// }
+	
+	for (int x=0; x<64; x++) {
+		for (int y=0; y<32; y++) {
+			if (em->frameBuffer[y * 64 + x]) {
+				DrawRectangle(x, y, 1, 1, RAYWHITE);
+			}
+		}
+	}
+
+	// for (int y = 0; y < 32; y++) {
+	// 	for (int x = 0; x < 64; x++) {
+	// 		if (em->frameBuffer[y][x] == 1) {
+	// 			// printf("PIXEL %d, %d\n", x, y);
+	// 			// DrawPixel(x, y, RAYWHITE);
+	// 			DrawRectangle(x, y, 1, 1, RAYWHITE);
+	// 		}
+	// 	}
+	// }
 }
 
 void emulatorLoad(Emulator *em, const char *name) {

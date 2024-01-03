@@ -1,13 +1,14 @@
-#include "raylib.h"
 #include "emulator/emulator.h"
+#include "renderer/renderer.h"
 
 int main(int argc, char *argv[]) {
 
+	Renderer renderer;
 	Emulator emulator;
 
-	// Emulator init.
+	rendererInit(&renderer);
+
 	emulatorInit(&emulator);
-	// Load game.
 	emulatorLoad(&emulator, "TETRIS.ch8");
 	//
 	// Emulation loop.
@@ -16,25 +17,11 @@ int main(int argc, char *argv[]) {
 	// Keys.
 	// End loop.
 	
-	while(emulator.pc < 4096) {
-		emulatorCycle(&emulator);
-	}
-
-	// const int width = 800;
-	// const int height = 450;
-	//
-	// InitWindow(width, height, "Window");
-	// SetTargetFPS(60);
-	//
-	// while (!WindowShouldClose()) {
-	// 	BeginDrawing();	
-	// 	ClearBackground(BLACK);
-	// 	EndDrawing();
-	//
+	// while(emulator.pc < 4096) {
 	// 	emulatorCycle(&emulator);
 	// }
-	//
-	// CloseWindow();
+	
+	rendererUpdate(&renderer, &emulator);
 
 	return 0;
 }
