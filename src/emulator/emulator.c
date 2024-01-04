@@ -1,9 +1,10 @@
-#include "emulator.h"
 #include <raylib.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "emulator.h"
 
 void frameBufferClear(Emulator *em) {
 	memset(em->frameBuffer, 0, sizeof(em->frameBuffer));
@@ -90,74 +91,78 @@ void emulatorLoad(Emulator *em, const char *name) {
 	fclose(file);
 
 	// Load into memory.
-	for (int i = 0; i < bufferSize; i++) {
+	for (int i = 0; i < (4096-512); i++) {
 		em->memory[i+512] = buffer[i];
 	}
 
 }
 
-void opcodeClearOrReturn(Emulator *em) {
-
-	uint16_t decoded = em->opcode & 0x000F;
-
-	switch (decoded) {
-		case 0x0000: // 0x00E0 Clears the screen.
-			printf("%X, %X, '%s'\n", decoded, em->opcode, "Clears the screen.");
-		break;
-		case 0x000E: // 0x00EE Returns from subroutine.
-			printf("%X, %X, '%s'\n", decoded, em->opcode, "Returns from a subroutine.");
-		break;
-	}
-}
-
-void showCode(Emulator *em, uint16_t decoded, const char *msg) {
-	printf("%X, %X, '%s'\n", decoded, em->opcode, msg);
-}
-
 void emulatorCycle(Emulator *em) {
 
 	em->opcode = em->memory[em->pc] << 8 | em->memory[em->pc + 1];
-
-	// uint16_t decoded = em->opcode & 0xF000;
 	
 	// Extract the different components of the opcode.
-	uint16_t first = (em->opcode & 0xF0000); // e.g. '5'xy0
-	uint16_t x     = (em->opcode & 0x0F00);  // e.g. 5'x'y0
-	uint16_t y     = (em->opcode & 0x00F0);  // e.g. 5x'y'0
-	uint16_t last  = (em->opcode & 0x000F);  // e.g. 5xy'0'
-	uint16_t nnn   = (em->opcode & 0x0FFF);  // e.g. 1'nnn' 
-	uint16_t kk    = (em->opcode & 0x00FF);  // e.g. 6x'kk'
+	uint16_t first = (em->opcode & 0xF000); // e.g. '5'xy0
+	// uint16_t x     = (em->opcode & 0x0F00); // e.g. 5'x'y0
+	// uint16_t y     = (em->opcode & 0x00F0); // e.g. 5x'y'0
+	uint16_t last  = (em->opcode & 0x000F); // e.g. 5xy'0'
+	// uint16_t nnn   = (em->opcode & 0x0FFF); // e.g. 1'nnn' 
+	uint16_t kk    = (em->opcode & 0x00FF); // e.g. 6x'kk'
 
-	// switch (decoded) {
-	//
-	// 	case 0x0000:
-	// 		opcodeClearOrReturn(em);
-	// 	break;
-	// 	case 0x1000:
-	// 		showCode(em, decoded, "JP addr.");
-	// 	break;
-	// 	case 0x2000:
-	// 		showCode(em, decoded, "CALL addr.");
-	// 	break;
-	// 	case 0x3000:
-	// 		showCode(em, decoded, "SE Vx, byte.");
-	// 	break;
-	// 	case 0x4000:
-	// 		showCode(em, decoded, "SNE Vx, byte.");
-	// 	break;
-	// 	case 0x5000:
-	// 		showCode(em, decoded, "SE Vx, Vy.");
-	// 	break;
-	// 	case 0x6000:
-	// 		showCode(em, decoded, "LD Vx, byte.");
-	// 	break;
-	// 	case 0x7000:
-	// 		showCode(em, decoded, "ADD Vx, byte.");
-	// 	break;
-	//
-	// 	default:
-	// 		showCode(em, decoded, "Unknown opcode.");
-	// }
+	switch (first) {
+
+		case 0x0000:
+			opcodePrefixZero(em, last);
+		break;
+		case 0x1000:
+			opcodePrint(em, "JP addr.");
+		break;
+		case 0x2000:
+			opcodePrint(em, "CALL addr.");
+		break;
+		case 0x3000:
+			opcodePrint(em, "SE Vx, byte.");
+		break;
+		case 0x4000:
+			opcodePrint(em, "SNE Vx, byte.");
+		break;
+		case 0x5000:
+			opcodePrint(em, "SE Vx, Vy.");
+		break;
+		case 0x6000:
+			opcodePrint(em, "LD Vx, byte.");
+		break;
+		case 0x7000:
+			opcodePrint(em, "ADD Vx, byte.");
+		break;
+		case 0x8000:
+			opcodePrefixEight(em, last);
+		break;
+		case 0x9000:
+			opcodePrint(em, "SNE Vx, Vy.");
+		break;
+		case 0xA000:
+			opcodePrint(em, "LD I, addr.");
+		break;
+		case 0xB000:
+			opcodePrint(em, "JP V0, addr.");
+		break;
+		case 0xC000:
+			opcodePrint(em, "RND Vx, byte.");
+		break;
+		case 0xD000:
+			opcodePrint(em, "DRW Vx, Vy, nibble.");
+		break;
+		case 0xE000:
+			opcodePrefixE(em, kk);
+		break;
+		case 0xF000:
+			opcodePrefixF(em, kk);
+		break;
+
+		default:
+			opcodePrint(em, "Unknown opcode.");
+	}
 
 	em->pc += 2;
 

@@ -40,7 +40,11 @@ void emulatorLoad(Emulator *em, const char *name);
 void emulatorCycle(Emulator *em);
 void emulatorUpate(Emulator *em);
 
-void opcodeClearOrReturn(Emulator *em);
+void opcodePrint(Emulator *em, const char *msg);
+void opcodePrefixZero(Emulator *em, const uint16_t last);
+void opcodePrefixEight(Emulator *em, const uint16_t last);
+void opcodePrefixE(Emulator *em, const uint16_t kk);
+void opcodePrefixF(Emulator *em, const uint16_t kk);
 
 void frameBufferClear(Emulator *em);
 void frameBufferPut(Emulator *em, uint8_t x, uint8_t y);
