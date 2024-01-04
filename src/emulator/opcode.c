@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "emulator.h"
 
 void opcodePrint(Emulator *em, const char *msg) {
@@ -14,44 +15,77 @@ void opcodePrint(Emulator *em, const char *msg) {
 		em->opcode, first, x, y, last, nnn, kk, msg);
 }
 
+/*
+* Increment the program counter by two after every executed opcode.
+* This is true unless you jump to a certain address in the memory or if you call a subroutine.
+* (in which case you need to store the program counter in the stack).
+* If the next opcode should be skipped, increase the program counter by four.
+*/
+
 void opcodePrefixZero(Emulator *em, const uint16_t parts[6]) {
 
 	switch (parts[3]) {
 		case 0x0000:
 			opcodePrint(em, "CLS.");
+			frameBufferClear(em);
+			em->pc += 2;
 		break;
 		case 0x000E:
 			opcodePrint(em, "RET.");
+			em->pc = em->stack[em->sp];
+			em->sp --;
 		break;
 	}
 }
 
 void opcodePrefixOne(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "JP addr.");
+	em->pc = parts[4];
 }
 
 void opcodePrefixTwo(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "CALL addr.");
+	em->sp ++;
+	em->stack[em->sp] = em->pc;
+	em->pc = parts[4];
 }
 
 void opcodePrefixThree(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "SE Vx, byte.");
+
+	if (em->V[parts[1]] == parts[5]) {
+		em->pc += 4;	
+	}
 }
 
 void opcodePrefixFour(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "SNE Vx, byte.");
+
+	if (em->V[parts[1]] != parts[5]) {
+		em->pc += 4;	
+	}
 }
 
 void opcodePrefixFive(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "SE Vx, Vy.");
+
+	if (em->V[parts[1]] == em->V[parts[2]]) {
+		em->pc += 4;
+	}
 }
 
 void opcodePrefixSix(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "LD Vx, byte.");
+
+	em->V[parts[1]] = parts[5];
+	em->pc += 2;
 }
 
 void opcodePrefixSeven(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "ADD Vx, byte.");
+
+	em->V[parts[1]] = em->V[parts[1]] + parts[5];
+	em->pc += 2;
 }
 
 void opcodePrefixEight(Emulator *em, const uint16_t parts[6]) {
@@ -59,15 +93,23 @@ void opcodePrefixEight(Emulator *em, const uint16_t parts[6]) {
 	switch (parts[3]) {
 		case 0x0000:
 			opcodePrint(em, "LD Vx, Vy.");
+			em->V[parts[1]] = em->V[parts[2]];
+			em->pc += 2;
 		break;
 		case 0x0001:
 			opcodePrint(em, "OR Vx, Vy.");
+			em->V[parts[1]] = em->V[parts[1]] | em->V[parts[2]];
+			em->pc += 2;
 		break;
 		case 0x0002:
 			opcodePrint(em, "AND Vx, Vy.");
+			em->V[parts[1]] = em->V[parts[1]] & em->V[parts[2]];
+			em->pc += 2;
 		break;
 		case 0x0003:
 			opcodePrint(em, "XOR Vx, Vy.");
+			em->V[parts[1]] = em->V[parts[1]] ^ em->V[parts[2]];
+			em->pc += 2;
 		break;
 		case 0x0004:
 			opcodePrint(em, "ADD Vx, Vy.");
@@ -89,18 +131,28 @@ void opcodePrefixEight(Emulator *em, const uint16_t parts[6]) {
 
 void opcodePrefixNine(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "SNE Vx, Vy.");
+
+	if (em->V[parts[1]] != em->V[parts[2]]) {
+		em->pc += 4;
+	}
 }
 
 void opcodePrefixA(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "LD I, addr.");
+	em->I = parts[4];
+	em->pc += 2;
 }
 
 void opcodePrefixB(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "JP V0, addr.");
+	em->pc = parts[4] + em->V[0];
 }
 
 void opcodePrefixC(Emulator *em, const uint16_t parts[6]) {
 	opcodePrint(em, "RND Vx, byte.");
+	int val = rand() % (256); // Random number from 0 to 255.
+	em->V[parts[1]] = val & parts[5];
+	em->pc += 2;
 }
 
 void opcodePrefixD(Emulator *em, const uint16_t parts[6]) {

@@ -9,7 +9,7 @@ void rendererInit(Renderer *renderer) {
 	renderer->gameHeight = 32;
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-	InitWindow(renderer->width, renderer->height, "CHIP8 Emulator");
+	InitWindow(renderer->width, renderer->height, "CHIP8 VM");
 	SetWindowMinSize(64*4, 32*4);
 
 	renderer->target = LoadRenderTexture(renderer->gameWidth, renderer->gameHeight);
@@ -39,7 +39,7 @@ void rendererUpdate(Renderer *renderer, unsigned char buffer[2048]) {
 
 	BeginTextureMode(renderer->target);
 
-		ClearBackground(DARKGRAY);
+		ClearBackground(BLACK);
 		drawFrameBuffer(buffer);
 
 	EndTextureMode();
@@ -59,6 +59,6 @@ void rendererUpdate(Renderer *renderer, unsigned char buffer[2048]) {
 		(float)renderer->gameWidth*scale, (float)renderer->gameHeight*scale
 	};
 
-	DrawTexturePro(renderer->target.texture, source, dest, (Vector2){0,0}, 0.0f, WHITE);
+	DrawTexturePro(renderer->target.texture, source, dest, (Vector2){0,0}, 0.0f, RAYWHITE);
 	EndDrawing();
 }

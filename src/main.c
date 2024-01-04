@@ -4,7 +4,7 @@ int main(int argc, char *argv[]) {
 
 	Emulator emulator;
 
-	emulatorInit(&emulator, true);
+	emulatorInit(&emulator, false);
 	emulatorLoad(&emulator, "TETRIS.ch8");
 
 	emulatorUpate(&emulator);

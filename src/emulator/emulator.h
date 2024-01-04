@@ -20,8 +20,8 @@ typedef struct {
 	
 	unsigned char frameBuffer[64*32]; // 64x32-pixel monochrome display.
 	
-	uint16_t delayTimer;
-	uint16_t soundTimer;
+	uint8_t delayTimer;
+	uint8_t soundTimer;
 
 	Renderer renderer;
 	bool stepMode;
