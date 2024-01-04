@@ -41,10 +41,23 @@ void emulatorCycle(Emulator *em);
 void emulatorUpate(Emulator *em);
 
 void opcodePrint(Emulator *em, const char *msg);
-void opcodePrefixZero(Emulator *em, const uint16_t last);
-void opcodePrefixEight(Emulator *em, const uint16_t last);
-void opcodePrefixE(Emulator *em, const uint16_t kk);
-void opcodePrefixF(Emulator *em, const uint16_t kk);
+
+void opcodePrefixZero(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixOne(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixTwo(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixThree(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixFour(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixFive(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixSix(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixSeven(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixEight(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixNine(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixA(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixB(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixC(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixD(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixE(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixF(Emulator *em, const uint16_t parts[6]);
 
 void frameBufferClear(Emulator *em);
 void frameBufferPut(Emulator *em, uint8_t x, uint8_t y);

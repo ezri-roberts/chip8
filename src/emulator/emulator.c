@@ -97,75 +97,42 @@ void emulatorLoad(Emulator *em, const char *name) {
 
 }
 
+void(*lookup[16])(Emulator*, const uint16_t[6]) = {
+	opcodePrefixZero,
+	opcodePrefixOne,
+	opcodePrefixTwo,
+	opcodePrefixThree,
+	opcodePrefixFour,
+	opcodePrefixFive,
+	opcodePrefixSix,
+	opcodePrefixSeven,
+	opcodePrefixEight,
+	opcodePrefixNine,
+	opcodePrefixA,
+	opcodePrefixB,
+	opcodePrefixC,
+	opcodePrefixD,
+	opcodePrefixE,
+	opcodePrefixF,
+};
+
 void emulatorCycle(Emulator *em) {
 
 	em->opcode = em->memory[em->pc] << 8 | em->memory[em->pc + 1];
 	
-	// Extract the different components of the opcode.
-	uint16_t first = (em->opcode & 0xF000); // e.g. '5'xy0
-	// uint16_t x     = (em->opcode & 0x0F00); // e.g. 5'x'y0
-	// uint16_t y     = (em->opcode & 0x00F0); // e.g. 5x'y'0
-	uint16_t last  = (em->opcode & 0x000F); // e.g. 5xy'0'
-	// uint16_t nnn   = (em->opcode & 0x0FFF); // e.g. 1'nnn' 
-	uint16_t kk    = (em->opcode & 0x00FF); // e.g. 6x'kk'
+	const uint16_t parts[6] = {
+		(em->opcode & 0xF000), // first e.g. '5'xy0
+		(em->opcode & 0x0F00), // x e.g. 5'x'y0
+		(em->opcode & 0x00F0), // y e.g. 5x'y'0
+		(em->opcode & 0x000F), // last e.g. 5xy'0'
+		(em->opcode & 0x0FFF), // nnn e.g. 1'nnn' 
+		(em->opcode & 0x00FF), // kk e.g. 6x'kk'
+	};
 
-	switch (first) {
-
-		case 0x0000:
-			opcodePrefixZero(em, last);
-		break;
-		case 0x1000:
-			opcodePrint(em, "JP addr.");
-		break;
-		case 0x2000:
-			opcodePrint(em, "CALL addr.");
-		break;
-		case 0x3000:
-			opcodePrint(em, "SE Vx, byte.");
-		break;
-		case 0x4000:
-			opcodePrint(em, "SNE Vx, byte.");
-		break;
-		case 0x5000:
-			opcodePrint(em, "SE Vx, Vy.");
-		break;
-		case 0x6000:
-			opcodePrint(em, "LD Vx, byte.");
-		break;
-		case 0x7000:
-			opcodePrint(em, "ADD Vx, byte.");
-		break;
-		case 0x8000:
-			opcodePrefixEight(em, last);
-		break;
-		case 0x9000:
-			opcodePrint(em, "SNE Vx, Vy.");
-		break;
-		case 0xA000:
-			opcodePrint(em, "LD I, addr.");
-		break;
-		case 0xB000:
-			opcodePrint(em, "JP V0, addr.");
-		break;
-		case 0xC000:
-			opcodePrint(em, "RND Vx, byte.");
-		break;
-		case 0xD000:
-			opcodePrint(em, "DRW Vx, Vy, nibble.");
-		break;
-		case 0xE000:
-			opcodePrefixE(em, kk);
-		break;
-		case 0xF000:
-			opcodePrefixF(em, kk);
-		break;
-
-		default:
-			opcodePrint(em, "Unknown opcode.");
-	}
+	const uint8_t index = parts[0] >> 12;
+	lookup[index](em, parts);
 
 	em->pc += 2;
-
 }
 
 bool shouldCycle(Emulator *em) {

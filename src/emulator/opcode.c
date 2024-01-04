@@ -14,9 +14,9 @@ void opcodePrint(Emulator *em, const char *msg) {
 		em->opcode, first, x, y, last, nnn, kk, msg);
 }
 
-void opcodePrefixZero(Emulator *em, const uint16_t last) {
+void opcodePrefixZero(Emulator *em, const uint16_t parts[6]) {
 
-	switch (last) {
+	switch (parts[3]) {
 		case 0x0000:
 			opcodePrint(em, "CLS.");
 		break;
@@ -26,9 +26,37 @@ void opcodePrefixZero(Emulator *em, const uint16_t last) {
 	}
 }
 
-void opcodePrefixEight(Emulator *em, const uint16_t last) {
+void opcodePrefixOne(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "JP addr.");
+}
 
-	switch (last) {
+void opcodePrefixTwo(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "CALL addr.");
+}
+
+void opcodePrefixThree(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "SE Vx, byte.");
+}
+
+void opcodePrefixFour(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "SNE Vx, byte.");
+}
+
+void opcodePrefixFive(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "SE Vx, Vy.");
+}
+
+void opcodePrefixSix(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "LD Vx, byte.");
+}
+
+void opcodePrefixSeven(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "ADD Vx, byte.");
+}
+
+void opcodePrefixEight(Emulator *em, const uint16_t parts[6]) {
+
+	switch (parts[3]) {
 		case 0x0000:
 			opcodePrint(em, "LD Vx, Vy.");
 		break;
@@ -59,9 +87,29 @@ void opcodePrefixEight(Emulator *em, const uint16_t last) {
 	}
 }
 
-void opcodePrefixE(Emulator *em, const uint16_t kk) {
+void opcodePrefixNine(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "SNE Vx, Vy.");
+}
 
-	switch (kk) {
+void opcodePrefixA(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "LD I, addr.");
+}
+
+void opcodePrefixB(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "JP V0, addr.");
+}
+
+void opcodePrefixC(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "RND Vx, byte.");
+}
+
+void opcodePrefixD(Emulator *em, const uint16_t parts[6]) {
+	opcodePrint(em, "DRW Vx, Vy, nibble.");
+}
+
+void opcodePrefixE(Emulator *em, const uint16_t parts[6]) {
+
+	switch (parts[5]) {
 		case 0x009E:
 			opcodePrint(em, "SKP Vx.");
 		break;
@@ -71,9 +119,9 @@ void opcodePrefixE(Emulator *em, const uint16_t kk) {
 	}
 }
 
-void opcodePrefixF(Emulator *em, const uint16_t kk) {
+void opcodePrefixF(Emulator *em, const uint16_t parts[6]) {
 
-	switch (kk) {
+	switch (parts[5]) {
 		case 0x0007:
 			opcodePrint(em, "LD Vx, DT.");
 		break;
