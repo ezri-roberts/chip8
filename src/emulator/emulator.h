@@ -6,22 +6,43 @@
 
 #include "../renderer/renderer.h"
 
+#define code(a, b) ((a << 8) | b)
+#define first(opcode) (opcode & 0xF000) // first e.g. '5'xy0
+#define second(opcode) ((opcode >> 8) & 0x0F) // x e.g. 5'x'y0
+#define third(opcode) ((opcode >> 4) & 0x0F) // y e.g. 5x'y'0
+#define fourth(opcode) (opcode & 0x0F) // last e.g. 5xy'0'
+#define nnn(opcode) (opcode & 0x0FFF) // nnn e.g. 1'nnn' 
+#define kk(opcode) (opcode & 0x0FF) // kk e.g. 6x'kk'
+
 typedef struct {
 
-	unsigned char memory[4096]; // 4KB / 4096 bytes of RAM.
-	uint8_t V[16]; // 8-bit registers. V0-VF
-	uint16_t I;
-	uint16_t pc; // Currently executing address.
+	uint16_t opcode;
+	uint16_t first;
+	uint16_t second;
+	uint16_t third;
+	uint16_t fourth;
+	uint16_t nnn;
+	uint16_t kk;
+} Instruction;
+
+typedef struct {
+
+	uint8_t memory[4096]; // 4KB / 4096 bytes of RAM.
+	uint8_t V[16];		  // 8-bit registers. V0-VF
+	uint16_t I;			  // Index register.
+	uint16_t pc;		  // Currently executing address.
 	
-	uint16_t opcode; // The current opcode;
+	Instruction instr; // The currently executing instruction.
 	
 	uint16_t stack[16];
-	uint8_t sp; // Points to top of stack.
+	uint16_t sp; // Points to top of stack.
 	
-	unsigned char frameBuffer[64*32]; // 64x32-pixel monochrome display.
+	bool frameBuffer[64*32]; // 64x32-pixel monochrome display.
 	
-	uint8_t delayTimer;
-	uint8_t soundTimer;
+	bool keypad[16];
+	
+	uint8_t delayTimer; // Decrements when > 0
+	uint8_t soundTimer; // Decrements and plays a tone when > 0
 
 	Renderer renderer;
 	bool stepMode;
@@ -40,24 +61,24 @@ void emulatorLoad(Emulator *em, const char *name);
 void emulatorCycle(Emulator *em);
 void emulatorUpate(Emulator *em);
 
-void opcodePrint(Emulator *em, const char *msg);
+void opcodePrint(Instruction *instr, const char *msg);
 
-void opcodePrefixZero(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixOne(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixTwo(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixThree(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixFour(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixFive(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixSix(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixSeven(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixEight(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixNine(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixA(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixB(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixC(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixD(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixE(Emulator *em, const uint16_t parts[6]);
-void opcodePrefixF(Emulator *em, const uint16_t parts[6]);
+void opcodePrefixZero(Emulator *em);
+void opcodePrefixOne(Emulator *em);
+void opcodePrefixTwo(Emulator *em);
+void opcodePrefixThree(Emulator *em);
+void opcodePrefixFour(Emulator *em);
+void opcodePrefixFive(Emulator *em);
+void opcodePrefixSix(Emulator *em);
+void opcodePrefixSeven(Emulator *em);
+void opcodePrefixEight(Emulator *em);
+void opcodePrefixNine(Emulator *em);
+void opcodePrefixA(Emulator *em);
+void opcodePrefixB(Emulator *em);
+void opcodePrefixC(Emulator *em);
+void opcodePrefixD(Emulator *em);
+void opcodePrefixE(Emulator *em);
+void opcodePrefixF(Emulator *em);
 
 void frameBufferClear(Emulator *em);
 void frameBufferPut(Emulator *em, uint8_t x, uint8_t y);

@@ -14,10 +14,12 @@ typedef struct {
 	uint8_t gameHeight;
 
 	RenderTexture2D target;
+	Rectangle source;
+	Rectangle dest;
 } Renderer;
 
 void rendererInit(Renderer *renderer);
-void rendererUpdate(Renderer *renderer, unsigned char buffer[2048]);
-void drawFrameBuffer(unsigned char buffer[2048]);
+void rendererUpdate(Renderer *renderer, bool buffer[]);
+void drawFrameBuffer(bool buffer[]);
 
 #endif // !RENDERER_H

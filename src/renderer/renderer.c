@@ -1,5 +1,7 @@
 #include "renderer.h"
 #include <raylib.h>
+#include <stdint.h>
+#include <stdio.h>
 
 void rendererInit(Renderer *renderer) {
 
@@ -15,21 +17,40 @@ void rendererInit(Renderer *renderer) {
 	renderer->target = LoadRenderTexture(renderer->gameWidth, renderer->gameHeight);
 	SetTextureFilter(renderer->target.texture, TEXTURE_FILTER_POINT);
 
+	renderer->source.x = 0;
+	renderer->source.y = 0;
+	renderer->source.width = (float)renderer->target.texture.width;
+	renderer->source.height = (float)-renderer->target.texture.height;
+
+	renderer->dest.x = 0;
+	renderer->dest.y = 0;
+	renderer->dest.width = (float)renderer->target.texture.width;
+	renderer->dest.height = (float)-renderer->target.texture.height;
+
 	SetTargetFPS(60);
 }
 
-void drawFrameBuffer(unsigned char buffer[2048]) {
+void drawFrameBuffer(bool buffer[]) {
 
-	for (int x=0; x<64; x++) {
-		for (int y=0; y<32; y++) {
-			if (buffer[y * 64 + x]) {
-				DrawRectangle(x, y, 1, 1, RAYWHITE);
-			}
+	// for (int x=0; x<64; x++) {
+	// 	for (int y=0; y<32; y++) {
+	// 		if (buffer[y * 64 + x]) {
+	// 			DrawRectangle(x, y, 1, 1, RAYWHITE);
+	// 		}
+	// 	}
+	// }
+	for (uint32_t i = 0; i < 2048; i++) {
+
+		uint16_t x = i % 64;
+		uint16_t y = i / 64;
+
+		if (buffer[i]) {
+			DrawRectangle(x, y, 1, 1, RAYWHITE);
 		}
 	}
 }
 
-void rendererUpdate(Renderer *renderer, unsigned char buffer[2048]) {
+void rendererUpdate(Renderer *renderer, bool buffer[]) {
 
 	// Calculate framebuffer scaling.
 	float scale = MIN(
@@ -39,26 +60,27 @@ void rendererUpdate(Renderer *renderer, unsigned char buffer[2048]) {
 
 	BeginTextureMode(renderer->target);
 
-		ClearBackground(BLACK);
+		ClearBackground(DARKGRAY);
 		drawFrameBuffer(buffer);
-
 	EndTextureMode();
 
 	BeginDrawing();
-	ClearBackground(BLACK);
 
-	Rectangle source = (Rectangle){
-		0.0f, 0.0f,
-		(float)renderer->target.texture.width,
-		(float)-renderer->target.texture.height
-	};
+		ClearBackground(BLACK);
 
-	Rectangle dest = (Rectangle){
-		(GetScreenWidth() - ((float)renderer->gameWidth*scale)) * 0.5f,	
-		(GetScreenHeight() - ((float)renderer->gameHeight*scale)) * 0.5f,	
-		(float)renderer->gameWidth*scale, (float)renderer->gameHeight*scale
-	};
+		renderer->source.x = 0.0f;
+		renderer->source.y = 0.0f;
+		renderer->source.width = (float)renderer->target.texture.width;
+		renderer->source.height = (float)renderer->target.texture.height;
 
-	DrawTexturePro(renderer->target.texture, source, dest, (Vector2){0,0}, 0.0f, RAYWHITE);
+		renderer->dest.x = (GetScreenWidth() - ((float)renderer->gameWidth*scale)) * 0.5f;
+		renderer->dest.y = (GetScreenHeight() - ((float)renderer->gameHeight*scale)) * 0.5f;
+		renderer->dest.width = (float)renderer->gameWidth*scale;
+		renderer->dest.height = (float)renderer->gameHeight*scale;
+
+		DrawTexturePro(
+			renderer->target.texture, renderer->source, renderer->dest,
+			(Vector2){0,0}, 0.0f, RAYWHITE
+		);
 	EndDrawing();
 }

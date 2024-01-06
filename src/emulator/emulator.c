@@ -11,8 +11,7 @@ void frameBufferClear(Emulator *em) {
 }
 
 void frameBufferPut(Emulator *em, uint8_t x, uint8_t y) {
-	int index = y * 64 + x;
-	em->frameBuffer[index] = 1;
+	em->frameBuffer[y * 64 + x] = 1;
 }
 
 void emulatorInit(Emulator *em, bool stepMode) {
@@ -20,18 +19,12 @@ void emulatorInit(Emulator *em, bool stepMode) {
 	rendererInit(&em->renderer);
 
 	em->pc = 0x200;
-	em->opcode = 0;
 	em->I = 0;
 	em->sp = 0;
 
-	frameBufferClear(em);
+	em->stepMode = stepMode;
 
-	// Test grid.
-	for (int x=0; x<64; x+=2) {
-		for (int y=0; y<32; y+=2) {
-			frameBufferPut(em, x, y);
-		}
-	}
+	frameBufferClear(em);
 
 	// Clear Stack
 	memset(em->stack, 0, sizeof(em->stack));
@@ -40,8 +33,7 @@ void emulatorInit(Emulator *em, bool stepMode) {
 	// Clear memory.
 	memset(em->memory, 0, sizeof(em->memory));
 
-	// Load fontset
-	static uint8_t fontset[80] = {
+	const uint8_t fontset[80] = {
 		0xF0, 0x90, 0x90, 0x90, 0xF0, /* 0 */
 		0x20, 0x60, 0x20, 0x20, 0x70, /* 1 */
 		0xF0, 0x10, 0xF0, 0x80, 0xF0, /* 2 */
@@ -60,6 +52,7 @@ void emulatorInit(Emulator *em, bool stepMode) {
 		0xF0, 0x80, 0xF0, 0x80, 0x80, /* F */
 	};
 	
+	// Load fontset into memory.
 	for (int i = 0; i < 80; i++) {
 		em->memory[i] = fontset[i];
 	}
@@ -67,37 +60,39 @@ void emulatorInit(Emulator *em, bool stepMode) {
 	// Reset timers.
 	em->delayTimer = 0;
 	em->soundTimer = 0;
-
-	em->stepMode = stepMode;
 }
 
 void emulatorLoad(Emulator *em, const char *name) {
 
-	const int bufferSize = 1000;
+	FILE *rom;
+	rom = fopen(name, "rb");
 
-	FILE *file;
-	unsigned char buffer[bufferSize];
-
-	file = fopen(name, "rb");
-
-	if (file == NULL) {
+	if (rom == NULL) {
 		printf("Error reading file '%s'", name);
 		exit(1);
 	}
 
-	size_t bytesRead = fread(buffer, 1, sizeof(buffer), file);
-	printf("Read %zu bytes from file '%s'\n", bytesRead, name);
+	// Get and check rom size.
+	fseek(rom, 0, SEEK_END);
+	const size_t romSize = ftell(rom);
+	const size_t maxSize = sizeof(em->memory) - 0x200; 
+	rewind(rom);
 
-	fclose(file);
-
-	// Load into memory.
-	for (int i = 0; i < (4096-512); i++) {
-		em->memory[i+512] = buffer[i];
+	if (romSize > maxSize) {
+		printf("ROM '%s' is too big.\n", name);
+		exit(1);
 	}
 
+	// Load rom into memory.
+	fread(&em->memory[0x200], romSize, 1, rom);
+
+	// size_t bytesRead = fread(buffer, 1, sizeof(buffer), rom);
+	printf("Read %zu bytes from file '%s'\n", romSize, name);
+
+	fclose(rom);
 }
 
-void(*lookup[16])(Emulator*, const uint16_t[6]) = {
+void(*lookup[16])(Emulator*) = {
 	opcodePrefixZero,
 	opcodePrefixOne,
 	opcodePrefixTwo,
@@ -118,19 +113,19 @@ void(*lookup[16])(Emulator*, const uint16_t[6]) = {
 
 void emulatorCycle(Emulator *em) {
 
-	em->opcode = em->memory[em->pc] << 8 | em->memory[em->pc + 1];
-	
-	const uint16_t parts[6] = {
-		(em->opcode & 0xF000), // first e.g. '5'xy0
-		(em->opcode & 0x0F00), // x e.g. 5'x'y0
-		(em->opcode & 0x00F0), // y e.g. 5x'y'0
-		(em->opcode & 0x000F), // last e.g. 5xy'0'
-		(em->opcode & 0x0FFF), // nnn e.g. 1'nnn' 
-		(em->opcode & 0x00FF), // kk e.g. 6x'kk'
-	};
+	em->instr.opcode = code(em->memory[em->pc], em->memory[em->pc+1]);
 
-	const uint8_t index = parts[0] >> 12;
-	lookup[index](em, parts);
+	em->instr.first = first(em->instr.opcode);
+	em->instr.second = second(em->instr.opcode);
+	em->instr.third = third(em->instr.opcode);
+	em->instr.fourth = fourth(em->instr.opcode);
+	em->instr.nnn = nnn(em->instr.opcode);
+	em->instr.kk = kk(em->instr.opcode);
+
+	em->pc += 2; // Pre-increment the counter for the next opcode.
+
+	// Execute the instruction.
+	lookup[em->instr.first >> 12](em);
 
 	// Timers.
 	if (em->delayTimer > 0) {
@@ -143,6 +138,11 @@ void emulatorCycle(Emulator *em) {
 }
 
 bool shouldCycle(Emulator *em) {
+
+	// const size_t maxSize = sizeof(em->memory) - 0x200; 
+	// if(em->pc >= maxSize) {
+	// 	return false;
+	// }
 
 	if (!em->stepMode) {
 		return true;
@@ -158,6 +158,8 @@ bool shouldCycle(Emulator *em) {
 void emulatorUpate(Emulator *em) {
 
 	while (!WindowShouldClose()) {
+
+		// Handle input.
 
 		if (shouldCycle(em)) {
 			emulatorCycle(em);
