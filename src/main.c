@@ -2,11 +2,11 @@
 
 int main(int argc, char *argv[]) {
 
-	Emulator emulator;
+	Vm vm;
 
-	emulatorInit(&emulator, false);
-	emulatorLoad(&emulator, "IBM.ch8");
-	emulatorUpate(&emulator);
+	emulatorInit(&vm, false);
+	emulatorLoad(&vm, argv[1]);
+	emulatorUpate(&vm);
 
 	return 0;
 }

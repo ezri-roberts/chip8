@@ -6,32 +6,32 @@
 
 #include "emulator.h"
 
-void frameBufferClear(Emulator *em) {
-	memset(em->frameBuffer, 0, sizeof(em->frameBuffer));
+void frameBufferClear(Vm *vm) {
+	memset(vm->frameBuffer, 0, sizeof(vm->frameBuffer));
 }
 
-void frameBufferPut(Emulator *em, uint8_t x, uint8_t y) {
-	em->frameBuffer[y * 64 + x] = 1;
+void frameBufferPut(Vm *vm, uint8_t x, uint8_t y) {
+	vm->frameBuffer[y * 64 + x] = 1;
 }
 
-void emulatorInit(Emulator *em, bool stepMode) {
+void emulatorInit(Vm *vm, bool stepMode) {
 
-	rendererInit(&em->renderer);
+	rendererInit(&vm->renderer);
 
-	em->pc = 0x200;
-	em->I = 0;
-	em->sp = 0;
+	vm->pc = 0x200;
+	vm->I = 0;
+	vm->sp = 0;
 
-	em->stepMode = stepMode;
+	vm->stepMode = stepMode;
 
-	frameBufferClear(em);
+	frameBufferClear(vm);
 
 	// Clear Stack
-	memset(em->stack, 0, sizeof(em->stack));
+	memset(vm->stack, 0, sizeof(vm->stack));
 	// Clear registers V0-VF
-	memset(em->V, 0, sizeof(em->V));
+	memset(vm->V, 0, sizeof(vm->V));
 	// Clear memory.
-	memset(em->memory, 0, sizeof(em->memory));
+	memset(vm->memory, 0, sizeof(vm->memory));
 
 	const uint8_t fontset[80] = {
 		0xF0, 0x90, 0x90, 0x90, 0xF0, /* 0 */
@@ -54,15 +54,17 @@ void emulatorInit(Emulator *em, bool stepMode) {
 	
 	// Load fontset into memory.
 	for (int i = 0; i < 80; i++) {
-		em->memory[i] = fontset[i];
+		vm->memory[i] = fontset[i];
 	}
 	
 	// Reset timers.
-	em->delayTimer = 0;
-	em->soundTimer = 0;
+	vm->delayTimer = 0;
+	vm->soundTimer = 0;
+
+	vm->state = RUNNING;
 }
 
-void emulatorLoad(Emulator *em, const char *name) {
+void emulatorLoad(Vm *vm, const char *name) {
 
 	FILE *rom;
 	rom = fopen(name, "rb");
@@ -75,7 +77,7 @@ void emulatorLoad(Emulator *em, const char *name) {
 	// Get and check rom size.
 	fseek(rom, 0, SEEK_END);
 	const size_t romSize = ftell(rom);
-	const size_t maxSize = sizeof(em->memory) - 0x200; 
+	const size_t maxSize = sizeof(vm->memory) - 0x200; 
 	rewind(rom);
 
 	if (romSize > maxSize) {
@@ -84,7 +86,7 @@ void emulatorLoad(Emulator *em, const char *name) {
 	}
 
 	// Load rom into memory.
-	fread(&em->memory[0x200], romSize, 1, rom);
+	fread(&vm->memory[0x200], romSize, 1, rom);
 
 	// size_t bytesRead = fread(buffer, 1, sizeof(buffer), rom);
 	printf("Read %zu bytes from file '%s'\n", romSize, name);
@@ -92,80 +94,86 @@ void emulatorLoad(Emulator *em, const char *name) {
 	fclose(rom);
 }
 
-void(*lookup[16])(Emulator*) = {
-	opcodePrefixZero,
-	opcodePrefixOne,
-	opcodePrefixTwo,
-	opcodePrefixThree,
-	opcodePrefixFour,
-	opcodePrefixFive,
-	opcodePrefixSix,
-	opcodePrefixSeven,
-	opcodePrefixEight,
-	opcodePrefixNine,
-	opcodePrefixA,
-	opcodePrefixB,
-	opcodePrefixC,
-	opcodePrefixD,
-	opcodePrefixE,
-	opcodePrefixF,
+void(*lookup[16])(Vm*) = {
+	opcodeZero,
+	opcodeOne,
+	opcodeTwo,
+	opcodeThree,
+	opcodeFour,
+	opcodeFive,
+	opcodeSix,
+	opcodeSeven,
+	opcodeEight,
+	opcodeNine,
+	opcodeA,
+	opcodeB,
+	opcodeC,
+	opcodeD,
+	opcodeE,
+	opcodeF,
 };
 
-void emulatorCycle(Emulator *em) {
+void emulatorCycle(Vm *vm) {
 
-	em->instr.opcode = code(em->memory[em->pc], em->memory[em->pc+1]);
+	vm->inst.opcode = code(vm->memory[vm->pc], vm->memory[vm->pc+1]);
 
-	em->instr.first = first(em->instr.opcode);
-	em->instr.second = second(em->instr.opcode);
-	em->instr.third = third(em->instr.opcode);
-	em->instr.fourth = fourth(em->instr.opcode);
-	em->instr.nnn = nnn(em->instr.opcode);
-	em->instr.kk = kk(em->instr.opcode);
+	vm->inst.first = first(vm->inst.opcode);
+	vm->inst.second = second(vm->inst.opcode);
+	vm->inst.third = third(vm->inst.opcode);
+	vm->inst.fourth = fourth(vm->inst.opcode);
+	vm->inst.nnn = nnn(vm->inst.opcode);
+	vm->inst.kk = kk(vm->inst.opcode);
 
-	em->pc += 2; // Pre-increment the counter for the next opcode.
+	printf("ADDR %X | ", vm->pc);
+	vm->pc += 2; // Pre-increment the counter for the next opcode.
 
 	// Execute the instruction.
-	lookup[em->instr.first >> 12](em);
+	lookup[vm->inst.first](vm);
 
 	// Timers.
-	if (em->delayTimer > 0) {
-		em->delayTimer--;
+	if (vm->delayTimer > 0) {
+		vm->delayTimer--;
 	}
 
-	if (em->soundTimer > 0) {
-		em->soundTimer--;
+	if (vm->soundTimer > 0) {
+		vm->soundTimer--;
 	}
 }
 
-bool shouldCycle(Emulator *em) {
-
-	// const size_t maxSize = sizeof(em->memory) - 0x200; 
-	// if(em->pc >= maxSize) {
-	// 	return false;
-	// }
-
-	if (!em->stepMode) {
-		return true;
-	}
-
-	if (IsKeyPressed(KEY_ENTER)) {
-		return true;
-	}
-
-	return false;
-}
-
-void emulatorUpate(Emulator *em) {
+void emulatorUpate(Vm *vm) {
 
 	while (!WindowShouldClose()) {
 
-		// Handle input.
-
-		if (shouldCycle(em)) {
-			emulatorCycle(em);
+		if (IsKeyPressed(KEY_SPACE)) {
+			vm->state = !vm->state;
 		}
 
-		rendererUpdate(&em->renderer, em->frameBuffer);
+		// Handle input.
+
+		if (vm->state == RUNNING) {
+
+			vm->keypad[0] = IsKeyPressed(KEY_X);
+			vm->keypad[1] = IsKeyPressed(KEY_ONE);
+			vm->keypad[2] = IsKeyPressed(KEY_TWO);
+			vm->keypad[3] = IsKeyPressed(KEY_THREE);
+			vm->keypad[4] = IsKeyPressed(KEY_Q);
+			vm->keypad[5] = IsKeyPressed(KEY_W);
+			vm->keypad[6] = IsKeyPressed(KEY_W);
+			vm->keypad[7] = IsKeyPressed(KEY_A);
+			vm->keypad[8] = IsKeyPressed(KEY_S);
+			vm->keypad[9] = IsKeyPressed(KEY_D);
+			vm->keypad[10] = IsKeyPressed(KEY_Z);
+			vm->keypad[11] = IsKeyPressed(KEY_C);
+			vm->keypad[12] = IsKeyPressed(KEY_FOUR);
+			vm->keypad[13] = IsKeyPressed(KEY_R);
+			vm->keypad[14] = IsKeyPressed(KEY_F);
+			vm->keypad[15] = IsKeyPressed(KEY_V);
+
+			emulatorCycle(vm);
+
+		}
+
+		rendererUpdate(&vm->renderer, vm->frameBuffer);
 	}
 
 	CloseWindow();

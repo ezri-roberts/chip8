@@ -1,11 +1,12 @@
 // #include <stdint.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include "emulator.h"
 
 void opcodePrint(Instruction *instr, const char *msg) {
 	
-	printf("%X | %X, %X, %X, %X | nnn: %X, kk: %X | '%s'\n",
+	printf("%X | [%X, %X, %X, %X] | nnn: %X, kk: %X | '%s'\n",
 		instr->opcode,
 		instr->first, instr->second, instr->third, instr->fourth,
 		instr->nnn, instr->kk, msg
@@ -19,198 +20,228 @@ void opcodePrint(Instruction *instr, const char *msg) {
 * If the next opcode should be skipped, increase the program counter by four.
 */
 
-void opcodePrefixZero(Emulator *em) {
+void opcodeZero(Vm *vm) {
 
-	switch (em->instr.kk) {
-		case 0x00E0:
-			opcodePrint(&em->instr, "CLS.");
-			frameBufferClear(em);
+	switch (vm->inst.kk) {
+		case 0xE0:
+			opcodePrint(&vm->inst, "CLS.");
+			frameBufferClear(vm);
 		break;
-		case 0x000E:
-			opcodePrint(&em->instr, "RET.");
-			em->pc = em->stack[em->sp];
-			em->sp --;
+		case 0xEE:
+			opcodePrint(&vm->inst, "RET.");
+			vm->pc = vm->stack[vm->sp];
+			vm->sp --;
 		break;
 	}
 }
 
-void opcodePrefixOne(Emulator *em) {
-	opcodePrint(&em->instr, "JP addr.");
-	em->pc = em->instr.nnn;
+void opcodeOne(Vm *vm) {
+	opcodePrint(&vm->inst, "JP addr.");
+	vm->pc = vm->inst.nnn;
 }
 
-void opcodePrefixTwo(Emulator *em) {
-	opcodePrint(&em->instr, "CALL addr.");
-	em->sp ++;
-	em->stack[em->sp] = em->pc;
-	em->pc = em->instr.nnn;
+void opcodeTwo(Vm *vm) {
+	opcodePrint(&vm->inst, "CALL addr.");
+	vm->sp ++;
+	vm->stack[vm->sp] = vm->pc;
+	vm->pc = vm->inst.nnn;
 }
 
-void opcodePrefixThree(Emulator *em) {
-	opcodePrint(&em->instr, "SE Vx, byte.");
+void opcodeThree(Vm *vm) {
+	opcodePrint(&vm->inst, "SE Vx, byte.");
 
-	if (em->V[em->instr.second] == em->instr.kk) {
-		em->pc += 2;
+	if (vm->V[vm->inst.second] == vm->inst.kk) {
+		vm->pc += 2;
 	}
 }
 
-void opcodePrefixFour(Emulator *em) {
-	opcodePrint(&em->instr, "SNE Vx, byte.");
+void opcodeFour(Vm *vm) {
+	opcodePrint(&vm->inst, "SNE Vx, byte.");
 
-	if (em->V[em->instr.second] != em->instr.kk) {
-		em->pc += 2;
+	if (vm->V[vm->inst.second] != vm->inst.kk) {
+		vm->pc += 2;
 	}
 }
 
-void opcodePrefixFive(Emulator *em) {
-	// opcodePrint(&em->instr, "SE Vx, Vy.");
+void opcodeFive(Vm *vm) {
+	opcodePrint(&vm->inst, "SE Vx, Vy.");
 
+	if (vm->V[vm->inst.second] == vm->V[vm->inst.third]) {
+
+		vm->pc += 2;
+	}
 }
 
-void opcodePrefixSix(Emulator *em) {
-	opcodePrint(&em->instr, "LD Vx, byte.");
+void opcodeSix(Vm *vm) {
+	opcodePrint(&vm->inst, "LD Vx, byte.");
 
-	em->V[em->instr.second] = em->instr.kk;
+	vm->V[vm->inst.second] = vm->inst.kk;
 }
 
-void opcodePrefixSeven(Emulator *em) {
-	opcodePrint(&em->instr, "ADD Vx, byte.");
+void opcodeSeven(Vm *vm) {
+	opcodePrint(&vm->inst, "ADD Vx, byte.");
 
-	em->V[em->instr.second] = em->V[em->instr.second] + em->instr.kk;
+	vm->V[vm->inst.second] = vm->V[vm->inst.second] + vm->inst.kk;
 }
 
-void opcodePrefixEight(Emulator *em) {
+void opcodeEight(Vm *vm) {
 
-	switch (em->instr.fourth) {
+	switch (vm->inst.fourth) {
 		case 0x0000:
-			opcodePrint(&em->instr, "LD Vx, Vy.");
-			em->V[em->instr.second] = em->V[em->instr.third];
+			opcodePrint(&vm->inst, "LD Vx, Vy.");
+			vm->V[vm->inst.second] = vm->V[vm->inst.third];
 		break;
 		case 0x0001:
-			// opcodePrint(&em->instr, "OR Vx, Vy.");
+			opcodePrint(&vm->inst, "OR Vx, Vy.");
+			vm->V[vm->inst.second] = vm->V[vm->inst.second] | vm->V[vm->inst.third];
 		break;
 		case 0x0002:
-			// opcodePrint(&em->instr, "AND Vx, Vy.");
+			opcodePrint(&vm->inst, "AND Vx, Vy.");
+			vm->V[vm->inst.second] = vm->V[vm->inst.second] & vm->V[vm->inst.third];
 		break;
 		case 0x0003:
-			// opcodePrint(&em->instr, "XOR Vx, Vy.");
+			opcodePrint(&vm->inst, "XOR Vx, Vy.");
+			vm->V[vm->inst.second] = vm->V[vm->inst.second] ^ vm->V[vm->inst.third];
 		break;
 		case 0x0004:
-			// opcodePrint(&em->instr, "ADD Vx, Vy.");
+			opcodePrint(&vm->inst, "ADD Vx, Vy.");
+
+			uint16_t val = vm->V[vm->inst.second] + vm->V[vm->inst.third];
+			vm->V[vm->inst.second] += vm->V[vm->inst.third];
+			vm->V[0xF] = val > 255;
 		break;
 		case 0x0005:
-			// opcodePrint(&em->instr, "SUB Vx, Vy.");
+			opcodePrint(&vm->inst, "SUB Vx, Vy.");
+
+			vm->V[0xF] = vm->V[vm->inst.second] > vm->V[vm->inst.third];
+			vm->V[vm->inst.second] -= vm->V[vm->inst.third];
 		break;
 		case 0x0006:
-			// opcodePrint(&em->instr, "SHR Vx {, Vy}.");
+			opcodePrint(&vm->inst, "SHR Vx {, Vy}.");
+
+			vm->V[0xF] = vm->V[vm->inst.second] & 1;
+			vm->V[vm->inst.second] >>= 1;
 		break;
 		case 0x0007:
-			// opcodePrint(&em->instr, "SUBN Vx, Vy.");
+			opcodePrint(&vm->inst, "SUBN Vx, Vy.");
+
+			vm->V[0xF] = vm->V[vm->inst.third] > vm->V[vm->inst.second];
+			vm->V[vm->inst.second] = vm->V[vm->inst.third] - vm->V[vm->inst.second];
 		break;
 		case 0x000E:
-			// opcodePrint(&em->instr, "SHL Vx {, Vy}.");
+			opcodePrint(&vm->inst, "SHL Vx {, Vy}.");
+
+			vm->V[0xF] = (vm->V[vm->inst.second] & 0x80) >> 7;
+			vm->V[vm->inst.second] <<= 1;
 		break;
 	}
 }
 
-void opcodePrefixNine(Emulator *em) {
-	// opcodePrint(&em->instr, "SNE Vx, Vy.");
+void opcodeNine(Vm *vm) {
+	opcodePrint(&vm->inst, "SNE Vx, Vy.");
 
+	if (vm->V[vm->inst.second] != vm->V[vm->inst.third]) {
+		vm->pc += 2;
+	}
 }
 
-void opcodePrefixA(Emulator *em) {
-	opcodePrint(&em->instr, "LD I, addr.");
-	em->I = em->instr.nnn;
+void opcodeA(Vm *vm) {
+	opcodePrint(&vm->inst, "LD I, addr.");
+	vm->I = vm->inst.nnn;
 }
 
-void opcodePrefixB(Emulator *em) {
-	opcodePrint(&em->instr, "JP V0, addr.");
-	em->pc = em->instr.nnn + em->V[0];
+void opcodeB(Vm *vm) {
+	opcodePrint(&vm->inst, "JP V0, addr.");
+	vm->pc = vm->inst.nnn + vm->V[0];
 }
 
-void opcodePrefixC(Emulator *em) {
-	// opcodePrint(&em->instr, "RND Vx, byte.");
+void opcodeC(Vm *vm) {
+	opcodePrint(&vm->inst, "RND Vx, byte.");
+	vm->V[vm->inst.second] = (rand() % 256) & vm->inst.kk;
 }
 
-void opcodePrefixD(Emulator *em) {
-	opcodePrint(&em->instr, "DRW Vx, Vy, nibble.");
+void opcodeD(Vm *vm) {
+	opcodePrint(&vm->inst, "DRW Vx, Vy, nibble.");
 
-	uint16_t xCoord = em->V[em->instr.second];
-	uint16_t yCoord = em->V[em->instr.third];
-	uint16_t height = em->instr.fourth;
-
-	printf("x: %d, y: %d, h: %d\n", xCoord, yCoord, height);
+	uint16_t xCoord = vm->V[vm->inst.second];
+	uint16_t yCoord = vm->V[vm->inst.third];
+	uint16_t height = vm->inst.fourth;
 
 	uint16_t pixel;
 
-	em->V[0xF] = 0;
+	vm->V[0xF] = 0;
 
 	for (int yLine = 0; yLine < height; yLine++) {
 	
-		pixel = em->memory[em->I + yLine];
+		pixel = vm->memory[vm->I + yLine];
+
 		for (int xLine = 0; xLine < 8; xLine++) {
 		
 			if ((pixel & (0x80 >> xLine)) != 0) {
 
-				if (em->frameBuffer[(xCoord+xLine + ((yCoord+yLine) * 64))] == 1) {
+				if (vm->frameBuffer[(xCoord+xLine + ((yCoord+yLine) * 64))] == 1) {
 
-					em->V[0xF] = 1;
+					vm->V[0xF] = 1;
 				}
-				em->frameBuffer[xCoord+xLine + ((yCoord+yLine) * 64)] ^= 1;
+				vm->frameBuffer[xCoord+xLine + ((yCoord+yLine) * 64)] ^= 1;
 			}
 		}
 	}
-
-
-	// for (int i = 0; i < em->instr.fourth; i++) {
-	//
-	// 	// uint16_t data = em->memory[em->I + i];
-	// 	frameBufferPut(em, xCoord, yCoord);
-	// 
-	// }
 }
 
-void opcodePrefixE(Emulator *em) {
+void opcodeE(Vm *vm) {
 
-	switch (em->instr.kk) {
+	switch (vm->inst.kk) {
 		case 0x009E:
-			// opcodePrint(&em->instr, "SKP Vx.");
+			opcodePrint(&vm->inst, "SKP Vx.");
+			if (vm->keypad[vm->V[vm->inst.second]]) {
+
+				vm->pc += 2;
+			}
 		break;
 		case 0x0A1:
-			// opcodePrint(&em->instr, "SKNP Vx.");
+			opcodePrint(&vm->inst, "SKNP Vx.");
+			if (!vm->keypad[vm->V[vm->inst.second]]) {
+
+				vm->pc += 2;
+			}
 		break;
 	}
 }
 
-void opcodePrefixF(Emulator *em) {
+void opcodeF(Vm *vm) {
 
-	switch (em->instr.kk) {
+	switch (vm->inst.kk) {
 		case 0x0007:
-			opcodePrint(&em->instr, "LD Vx, DT.");
+			opcodePrint(&vm->inst, "LD Vx, DT.");
+			vm->V[vm->inst.second] = vm->delayTimer;
 		break;
 		case 0x000A:
-			opcodePrint(&em->instr, "LD VX, K.");
+			opcodePrint(&vm->inst, "LD VX, K.");
+
 		break;
 		case 0x0015:
-			opcodePrint(&em->instr, "LD DT, Vx.");
+			opcodePrint(&vm->inst, "LD DT, Vx.");
+			vm->delayTimer = vm->V[vm->inst.second];
 		break;
 		case 0x0018:
-			opcodePrint(&em->instr, "LD ST, Vx.");
+			// opcodePrint(&em->instr, "LD ST, Vx.");
 		break;
 		case 0x001E:
-			opcodePrint(&em->instr, "ADD I, Vx.");
+			opcodePrint(&vm->inst, "ADD I, Vx.");
+			vm->I += vm->V[vm->inst.second];
 		break;
 		case 0x0029:
-			opcodePrint(&em->instr, "LD F, Vx.");
+			// opcodePrint(&em->instr, "LD F, Vx.");
 		break;
 		case 0x0033:
-			opcodePrint(&em->instr, "LD B, Vx.");
+			// opcodePrint(&em->instr, "LD B, Vx.");
 		break;
 		case 0x0055:
-			opcodePrint(&em->instr, "LD [I], Vx.");
+			// opcodePrint(&em->instr, "LD [I], Vx.");
 		break;
 		case 0x0065:
-			opcodePrint(&em->instr, "LD Vx, [I].");
+			// opcodePrint(&em->instr, "LD Vx, [I].");
 		break;
 	}
 }
