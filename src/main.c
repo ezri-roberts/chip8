@@ -1,12 +1,12 @@
-#include "emulator/emulator.h"
+#include "vm/vm.h"
 
 int main(int argc, char *argv[]) {
 
 	Vm vm;
 
-	emulatorInit(&vm, false);
-	emulatorLoad(&vm, argv[1]);
-	emulatorUpate(&vm);
+	vm_init(&vm);
+	vm_load_rom(&vm, argv[1]);
+	vm_update(&vm);
 
 	return 0;
 }

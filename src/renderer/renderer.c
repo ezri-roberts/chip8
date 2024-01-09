@@ -1,20 +1,19 @@
 #include "renderer.h"
 #include <raylib.h>
 #include <stdint.h>
-#include <stdio.h>
 
-void rendererInit(Renderer *renderer) {
+void renderer_init(Renderer *renderer) {
 
 	renderer->width = 640;
 	renderer->height = 360;
-	renderer->gameWidth = 64;
-	renderer->gameHeight = 32;
+	renderer->game_width = 64;
+	renderer->game_height = 32;
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
 	InitWindow(renderer->width, renderer->height, "CHIP8 VM");
 	SetWindowMinSize(64*4, 32*4);
 
-	renderer->target = LoadRenderTexture(renderer->gameWidth, renderer->gameHeight);
+	renderer->target = LoadRenderTexture(renderer->game_width, renderer->game_height);
 	SetTextureFilter(renderer->target.texture, TEXTURE_FILTER_POINT);
 
 	renderer->source.x = 0;
@@ -30,7 +29,7 @@ void rendererInit(Renderer *renderer) {
 	SetTargetFPS(500);
 }
 
-void drawFrameBuffer(bool buffer[]) {
+void framebuffer_draw(bool buffer[]) {
 
 	for (uint32_t i = 0; i < 2048; i++) {
 
@@ -43,18 +42,18 @@ void drawFrameBuffer(bool buffer[]) {
 	}
 }
 
-void rendererUpdate(Renderer *renderer, bool buffer[]) {
+void renderer_update(Renderer *renderer, bool buffer[]) {
 
 	// Calculate framebuffer scaling.
 	float scale = MIN(
-		(float)GetScreenWidth()/renderer->gameWidth,
-		(float)GetScreenHeight()/renderer->gameHeight
+		(float)GetScreenWidth()/renderer->game_width,
+		(float)GetScreenHeight()/renderer->game_height
 	);
 
 	BeginTextureMode(renderer->target);
 
 		ClearBackground(DARKBLUE);
-		drawFrameBuffer(buffer);
+		framebuffer_draw(buffer);
 	EndTextureMode();
 
 	renderer->source.x = 0.0f;
@@ -62,10 +61,10 @@ void rendererUpdate(Renderer *renderer, bool buffer[]) {
 	renderer->source.width = (float)renderer->target.texture.width;
 	renderer->source.height = (float)-renderer->target.texture.height;
 
-	renderer->dest.x = (GetScreenWidth() - ((float)renderer->gameWidth*scale)) * 0.5f;
-	renderer->dest.y = (GetScreenHeight() - ((float)renderer->gameHeight*scale)) * 0.5f;
-	renderer->dest.width = (float)renderer->gameWidth*scale;
-	renderer->dest.height = (float)renderer->gameHeight*scale;
+	renderer->dest.x = (GetScreenWidth() - ((float)renderer->game_width*scale)) * 0.5f;
+	renderer->dest.y = (GetScreenHeight() - ((float)renderer->game_height*scale)) * 0.5f;
+	renderer->dest.width = (float)renderer->game_width*scale;
+	renderer->dest.height = (float)renderer->game_height*scale;
 
 	BeginDrawing();
 

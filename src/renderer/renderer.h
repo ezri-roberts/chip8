@@ -6,20 +6,20 @@
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
-typedef struct {
+typedef struct Renderer {
 	uint16_t width;
 	uint16_t height;
 
-	uint8_t gameWidth;
-	uint8_t gameHeight;
+	uint8_t game_width;
+	uint8_t game_height;
 
 	RenderTexture2D target;
 	Rectangle source;
 	Rectangle dest;
 } Renderer;
 
-void rendererInit(Renderer *renderer);
-void rendererUpdate(Renderer *renderer, bool buffer[]);
-void drawFrameBuffer(bool buffer[]);
+void renderer_init(Renderer *renderer);
+void renderer_update(Renderer *renderer, bool buffer[]);
+void framebuffer_draw(bool buffer[]);
 
 #endif // !RENDERER_H

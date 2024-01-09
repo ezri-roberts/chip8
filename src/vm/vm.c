@@ -4,27 +4,21 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "emulator.h"
+#include "vm.h"
 
-void frameBufferClear(Vm *vm) {
-	memset(vm->frameBuffer, 0, sizeof(vm->frameBuffer));
+void vm_framebuffer_clear(Vm *vm) {
+	memset(vm->framebuffer, 0, sizeof(vm->framebuffer));
 }
 
-void frameBufferPut(Vm *vm, uint8_t x, uint8_t y) {
-	vm->frameBuffer[y * 64 + x] = 1;
-}
+void vm_init(Vm *vm) {
 
-void emulatorInit(Vm *vm, bool stepMode) {
-
-	rendererInit(&vm->renderer);
+	renderer_init(&vm->renderer);
 
 	vm->pc = 0x200;
 	vm->I = 0;
 	vm->sp = 0;
 
-	vm->stepMode = stepMode;
-
-	frameBufferClear(vm);
+	vm_framebuffer_clear(vm);
 
 	// Clear Stack
 	memset(vm->stack, 0, sizeof(vm->stack));
@@ -58,13 +52,13 @@ void emulatorInit(Vm *vm, bool stepMode) {
 	}
 	
 	// Reset timers.
-	vm->delayTimer = 0;
-	vm->soundTimer = 0;
+	vm->delay_timer = 0;
+	vm->sound_timer = 0;
 
 	vm->state = RUNNING;
 }
 
-void emulatorLoad(Vm *vm, const char *name) {
+void vm_load_rom(Vm *vm, const char *name) {
 
 	FILE *rom;
 	rom = fopen(name, "rb");
@@ -74,26 +68,30 @@ void emulatorLoad(Vm *vm, const char *name) {
 		exit(1);
 	}
 
-	// Get and check rom size.
+	// Get rom size.
 	fseek(rom, 0, SEEK_END);
-	const size_t romSize = ftell(rom);
-	const size_t maxSize = sizeof(vm->memory) - 0x200; 
+	const size_t rom_size = ftell(rom);
 	rewind(rom);
 
-	if (romSize > maxSize) {
+	const size_t max_size = sizeof(vm->memory) - 0x200; 
+
+	// Make sure rom is not too big.
+	if (rom_size > max_size) {
 		printf("ROM '%s' is too big.\n", name);
+		printf("ROM can be no bigger than %zu bytes.", max_size);
 		exit(1);
 	}
 
 	// Load rom into memory.
-	fread(&vm->memory[0x200], romSize, 1, rom);
-
-	// size_t bytesRead = fread(buffer, 1, sizeof(buffer), rom);
-	printf("Read %zu bytes from file '%s'\n", romSize, name);
+	// All programs are loaded in starting at address 0x200.
+	fread(&vm->memory[0x200], rom_size, 1, rom);
+	printf("Read %zu bytes from file '%s'\n", rom_size, name);
 
 	fclose(rom);
 }
 
+// Lookup table for instruction execution functions.
+// Indexed by the first nibble of an opcode.
 void(*lookup[16])(Vm*) = {
 	opcodeZero,
 	opcodeOne,
@@ -113,16 +111,17 @@ void(*lookup[16])(Vm*) = {
 	opcodeF,
 };
 
-void emulatorCycle(Vm *vm) {
+void vm_cycle(Vm *vm) {
 
-	vm->inst.opcode = code(vm->memory[vm->pc], vm->memory[vm->pc+1]);
+	vm->inst.opcode = OPCODE(vm->memory[vm->pc], vm->memory[vm->pc+1]);
 
-	vm->inst.first = first(vm->inst.opcode);
-	vm->inst.second = second(vm->inst.opcode);
-	vm->inst.third = third(vm->inst.opcode);
-	vm->inst.fourth = fourth(vm->inst.opcode);
-	vm->inst.nnn = nnn(vm->inst.opcode);
-	vm->inst.kk = kk(vm->inst.opcode);
+	// Mask off parts of the instruction.
+	vm->inst.first = FIRST(vm->inst.opcode);
+	vm->inst.x = X(vm->inst.opcode);
+	vm->inst.y = Y(vm->inst.opcode);
+	vm->inst.n = N(vm->inst.opcode);
+	vm->inst.nnn = NNN(vm->inst.opcode);
+	vm->inst.kk = KK(vm->inst.opcode);
 
 	printf("ADDR %X | ", vm->pc);
 	vm->pc += 2; // Pre-increment the counter for the next opcode.
@@ -130,17 +129,17 @@ void emulatorCycle(Vm *vm) {
 	// Execute the instruction.
 	lookup[vm->inst.first](vm);
 
-	// Timers.
-	if (vm->delayTimer > 0) {
-		vm->delayTimer--;
+	// Decrement timers.
+	if (vm->delay_timer > 0) {
+		vm->delay_timer--;
 	}
 
-	if (vm->soundTimer > 0) {
-		vm->soundTimer--;
+	if (vm->sound_timer > 0) {
+		vm->sound_timer--;
 	}
 }
 
-void emulatorUpate(Vm *vm) {
+void vm_update(Vm *vm) {
 
 	while (!WindowShouldClose()) {
 
@@ -169,11 +168,10 @@ void emulatorUpate(Vm *vm) {
 			vm->keypad[14] = IsKeyPressed(KEY_F);
 			vm->keypad[15] = IsKeyPressed(KEY_V);
 
-			emulatorCycle(vm);
-
+			vm_cycle(vm);
 		}
 
-		rendererUpdate(&vm->renderer, vm->frameBuffer);
+		renderer_update(&vm->renderer, vm->framebuffer);
 	}
 
 	CloseWindow();

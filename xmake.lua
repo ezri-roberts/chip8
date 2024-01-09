@@ -1,7 +1,7 @@
 target("chip8")
     set_kind("binary")
     add_files("src/*.c")
-    add_files("src/emulator/*.c")
+    add_files("src/vm/*.c")
     add_files("src/renderer/*.c")
 	add_links("raylib")
 	add_syslinks("GL", "m", "pthread", "dl", "rt", "X11")
