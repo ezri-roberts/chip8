@@ -1,16 +1,17 @@
 // #include <stdint.h>
 #include <stdint.h>
+// #include <stdio.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "vm.h"
 
 void instruction_print(Instruction *instr, const char *msg) {
 	
-	printf("%X | [%X, %X, %X, %X] | nnn: %X, kk: %X | '%s'\n",
-		instr->opcode,
-		instr->first, instr->x, instr->y, instr->n,
-		instr->nnn, instr->kk, msg
-	);
+	// printf("%X | [%X, %X, %X, %X] | nnn: %X, kk: %X | '%s'\n",
+	// 	instr->opcode,
+	// 	instr->first, instr->x, instr->y, instr->n,
+	// 	instr->nnn, instr->kk, msg
+	// );
 }
 
 // Execute opcodes starting with 0.
@@ -224,6 +225,22 @@ void opcodeF(Vm *vm) {
 		case 0x000A:
 			instruction_print(&vm->inst, "LD VX, K.");
 
+			bool key_pressed = false;
+			uint8_t key;
+
+			for (uint8_t i = 0; i < sizeof(vm->keypad); i++) {
+			
+				if (vm->keypad[i]) {
+					key_pressed = true;
+					key = i;
+				}
+			}
+
+			if (key_pressed) {
+				vm->V[vm->inst.x] = key;
+			} else {
+				vm->pc -= 2;
+			}
 		break;
 		case 0x0015:
 			instruction_print(&vm->inst, "LD DT, Vx.");
@@ -231,7 +248,9 @@ void opcodeF(Vm *vm) {
 			vm->delay_timer = vm->V[vm->inst.x];
 		break;
 		case 0x0018:
-			// opcodePrint(&em->instr, "LD ST, Vx.");
+			instruction_print(&vm->inst, "LD ST, Vx.");
+
+			vm->sound_timer = vm->V[vm->inst.x];
 		break;
 		case 0x001E:
 			instruction_print(&vm->inst, "ADD I, Vx.");
@@ -239,16 +258,35 @@ void opcodeF(Vm *vm) {
 			vm->I += vm->V[vm->inst.x];
 		break;
 		case 0x0029:
-			// opcodePrint(&em->instr, "LD F, Vx.");
+			instruction_print(&vm->inst, "LD F, Vx.");
+
+			vm->I = vm->V[vm->inst.x] * 5;
 		break;
 		case 0x0033:
-			// opcodePrint(&em->instr, "LD B, Vx.");
+			instruction_print(&vm->inst, "LD B, Vx.");
+
+			uint8_t bcd = vm->V[vm->inst.x];
+
+			vm->memory[vm->I+2] = bcd % 10;
+			bcd /= 10;
+			vm->memory[vm->I+1] = bcd % 10;
+			bcd /= 10;
+			vm->memory[vm->I] = bcd;
+
 		break;
 		case 0x0055:
-			// opcodePrint(&em->instr, "LD [I], Vx.");
+			instruction_print(&vm->inst, "LD [I], Vx.");
+
+			for (uint8_t i = 0; i <= vm->inst.x; i++) {
+				vm->memory[vm->I++] = vm->V[i];
+			}
 		break;
 		case 0x0065:
-			// opcodePrint(&em->instr, "LD Vx, [I].");
+			instruction_print(&vm->inst, "LD Vx, [I].");
+
+			for (uint8_t i = 0; i <= vm->inst.x; i++) {
+				vm->V[i] = vm->memory[vm->I++];
+			}
 		break;
 	}
 }

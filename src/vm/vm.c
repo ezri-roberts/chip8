@@ -26,6 +26,7 @@ void vm_init(Vm *vm) {
 	memset(vm->V, 0, sizeof(vm->V));
 	// Clear memory.
 	memset(vm->memory, 0, sizeof(vm->memory));
+	memset(vm->keypad, 0, sizeof(vm->keypad));
 
 	const uint8_t fontset[80] = {
 		0xF0, 0x90, 0x90, 0x90, 0xF0, /* 0 */
@@ -54,6 +55,7 @@ void vm_init(Vm *vm) {
 	// Reset timers.
 	vm->delay_timer = 0;
 	vm->sound_timer = 0;
+	vm->clock_rate = 700;
 
 	vm->state = RUNNING;
 }
@@ -123,7 +125,7 @@ void vm_cycle(Vm *vm) {
 	vm->inst.nnn = NNN(vm->inst.opcode);
 	vm->inst.kk = KK(vm->inst.opcode);
 
-	printf("ADDR %X | ", vm->pc);
+	// printf("ADDR %X | ", vm->pc);
 	vm->pc += 2; // Pre-increment the counter for the next opcode.
 
 	// Execute the instruction.
@@ -139,6 +141,27 @@ void vm_cycle(Vm *vm) {
 	}
 }
 
+void vm_input_update(Vm *vm) {
+
+	const uint8_t lookup[] = {
+		88, 49, 50, 51,
+		81, 87, 69, 65,
+		83, 68, 90, 67,
+		52, 82, 70, 86,
+	};
+	
+	uint8_t key = GetKeyPressed();
+
+	for (uint8_t i; i < 16; i++) {
+
+		if (IsKeyPressed(lookup[i])) {
+			vm->keypad[i] = true;
+		} else if (IsKeyReleased(lookup[i])) {
+			vm->keypad[i] = false;
+		}
+	}
+}
+
 void vm_update(Vm *vm) {
 
 	while (!WindowShouldClose()) {
@@ -151,24 +174,10 @@ void vm_update(Vm *vm) {
 
 		if (vm->state == RUNNING) {
 
-			vm->keypad[0] = IsKeyPressed(KEY_X);
-			vm->keypad[1] = IsKeyPressed(KEY_ONE);
-			vm->keypad[2] = IsKeyPressed(KEY_TWO);
-			vm->keypad[3] = IsKeyPressed(KEY_THREE);
-			vm->keypad[4] = IsKeyPressed(KEY_Q);
-			vm->keypad[5] = IsKeyPressed(KEY_W);
-			vm->keypad[6] = IsKeyPressed(KEY_W);
-			vm->keypad[7] = IsKeyPressed(KEY_A);
-			vm->keypad[8] = IsKeyPressed(KEY_S);
-			vm->keypad[9] = IsKeyPressed(KEY_D);
-			vm->keypad[10] = IsKeyPressed(KEY_Z);
-			vm->keypad[11] = IsKeyPressed(KEY_C);
-			vm->keypad[12] = IsKeyPressed(KEY_FOUR);
-			vm->keypad[13] = IsKeyPressed(KEY_R);
-			vm->keypad[14] = IsKeyPressed(KEY_F);
-			vm->keypad[15] = IsKeyPressed(KEY_V);
-
-			vm_cycle(vm);
+			for (uint32_t i = 0; i < vm->clock_rate/60; i++) {
+				vm_input_update(vm);
+				vm_cycle(vm);
+			}
 		}
 
 		renderer_update(&vm->renderer, vm->framebuffer);

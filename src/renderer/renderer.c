@@ -26,7 +26,7 @@ void renderer_init(Renderer *renderer) {
 	renderer->dest.width = (float)renderer->target.texture.width;
 	renderer->dest.height = (float)-renderer->target.texture.height;
 
-	SetTargetFPS(500);
+	SetTargetFPS(60);
 }
 
 void framebuffer_draw(bool buffer[]) {

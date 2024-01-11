@@ -45,15 +45,27 @@ typedef struct Vm {
 	
 	Instruction inst; // The currently executing instruction.
 	
+	// The stack stores the address to return to when finished with a subroutine.
+	// Allows 16 levels of nested subroutines.
 	uint16_t stack[16];
 	uint16_t sp; // Points to top of stack.
 	
 	bool framebuffer[64*32]; // 64x32-pixel monochrome display.
+	/*
+	 * ---------------------
+	 * |(0, 0)		(63, 0)|
+	 * |				   |
+	 * |				   |
+	 * |(0, 31)	   (63, 31)|
+	 * ---------------------
+	*/
 	
 	bool keypad[16];
 	
 	uint8_t delay_timer; // Decrements when > 0
 	uint8_t sound_timer; // Decrements and plays a tone when > 0
+	
+	uint32_t clock_rate;
 
 	Renderer renderer;
 
@@ -64,6 +76,8 @@ void vm_init(Vm *vm);
 void vm_load_rom(Vm *vm, const char *name);
 void vm_cycle(Vm *vm);
 void vm_update(Vm *vm);
+void vm_input_update(Vm *vm);
+bool vm_input_any(Vm *vm);
 void vm_framebuffer_clear(Vm *vm);
 
 void instruction_print(Instruction *instr, const char *msg);
