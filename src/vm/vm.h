@@ -1,6 +1,7 @@
 #ifndef VM_H
 #define VM_H
 
+#include <raylib.h>
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -69,6 +70,9 @@ typedef struct Vm {
 
 	Renderer renderer;
 
+	AudioStream audio_stream;
+	AudioCallback audio_callback;
+
 	State state;
 } Vm;
 
@@ -79,6 +83,7 @@ void vm_update(Vm *vm);
 void vm_input_update(Vm *vm);
 bool vm_input_any(Vm *vm);
 void vm_framebuffer_clear(Vm *vm);
+void vm_audio_callback(void *buffer_data, uint32_t frames);
 
 void instruction_print(Instruction *instr, const char *msg);
 
