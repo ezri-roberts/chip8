@@ -2,7 +2,7 @@
 #define RENDERER_H
 
 #include <stdint.h>
-#include <raylib.h>
+#include "raylib.h"
 
 #define MIN(a, b) ((a)<(b)? (a) : (b))
 
@@ -10,8 +10,8 @@ typedef struct Renderer {
 	uint16_t width;
 	uint16_t height;
 
-	uint8_t game_width;
-	uint8_t game_height;
+	uint8_t texture_width;
+	uint8_t texture_height;
 
 	RenderTexture2D target;
 	Rectangle source;

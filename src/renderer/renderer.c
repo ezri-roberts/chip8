@@ -6,14 +6,14 @@ void renderer_init(Renderer *renderer) {
 
 	renderer->width = 640;
 	renderer->height = 360;
-	renderer->game_width = 64;
-	renderer->game_height = 32;
+	renderer->texture_width = 64;
+	renderer->texture_height = 32;
 
 	SetConfigFlags(FLAG_WINDOW_RESIZABLE | FLAG_VSYNC_HINT);
-	InitWindow(renderer->width, renderer->height, "CHIP8 VM");
+	InitWindow(renderer->width, renderer->height, "Chip-8 Emulator");
 	SetWindowMinSize(64*4, 32*4);
 
-	renderer->target = LoadRenderTexture(renderer->game_width, renderer->game_height);
+	renderer->target = LoadRenderTexture(renderer->texture_width, renderer->texture_height);
 	SetTextureFilter(renderer->target.texture, TEXTURE_FILTER_POINT);
 
 	renderer->source.x = 0;
@@ -46,8 +46,8 @@ void renderer_update(Renderer *renderer, bool buffer[]) {
 
 	// Calculate framebuffer scaling.
 	float scale = MIN(
-		(float)GetScreenWidth()/renderer->game_width,
-		(float)GetScreenHeight()/renderer->game_height
+		(float)GetScreenWidth()/renderer->texture_width,
+		(float)GetScreenHeight()/renderer->texture_height
 	);
 
 	BeginTextureMode(renderer->target);
@@ -61,10 +61,10 @@ void renderer_update(Renderer *renderer, bool buffer[]) {
 	renderer->source.width = (float)renderer->target.texture.width;
 	renderer->source.height = (float)-renderer->target.texture.height;
 
-	renderer->dest.x = (GetScreenWidth() - ((float)renderer->game_width*scale)) * 0.5f;
-	renderer->dest.y = (GetScreenHeight() - ((float)renderer->game_height*scale)) * 0.5f;
-	renderer->dest.width = (float)renderer->game_width*scale;
-	renderer->dest.height = (float)renderer->game_height*scale;
+	renderer->dest.x = (GetScreenWidth() - ((float)renderer->texture_width*scale)) * 0.5f;
+	renderer->dest.y = (GetScreenHeight() - ((float)renderer->texture_height*scale)) * 0.5f;
+	renderer->dest.width = (float)renderer->texture_width*scale;
+	renderer->dest.height = (float)renderer->texture_height*scale;
 
 	BeginDrawing();
 

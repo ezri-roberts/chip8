@@ -6,6 +6,7 @@
 
 #include "vm.h"
 
+// Set all values in framebuffer to zero.
 void vm_framebuffer_clear(Vm *vm) {
 	memset(vm->framebuffer, 0, sizeof(vm->framebuffer));
 }
@@ -14,7 +15,7 @@ void vm_init(Vm *vm) {
 
 	renderer_init(&vm->renderer);
 
-	vm->pc = 0x200;
+	vm->pc = 0x200; // ROM is loaded in at address 0x200.
 	vm->I = 0;
 	vm->sp = 0;
 
@@ -26,8 +27,10 @@ void vm_init(Vm *vm) {
 	memset(vm->V, 0, sizeof(vm->V));
 	// Clear memory.
 	memset(vm->memory, 0, sizeof(vm->memory));
+	// Set all keypad states to zero.
 	memset(vm->keypad, 0, sizeof(vm->keypad));
 
+	// The Chip-8 fontset.
 	const uint8_t fontset[80] = {
 		0xF0, 0x90, 0x90, 0x90, 0xF0, /* 0 */
 		0x20, 0x60, 0x20, 0x20, 0x70, /* 1 */
@@ -65,12 +68,13 @@ void vm_load_rom(Vm *vm, const char *name) {
 	FILE *rom;
 	rom = fopen(name, "rb");
 
+	// Couldn't open file. Abort!
 	if (rom == NULL) {
 		printf("Error reading file '%s'", name);
 		exit(1);
 	}
 
-	// Get rom size.
+	// Get sizo of rom.
 	fseek(rom, 0, SEEK_END);
 	const size_t rom_size = ftell(rom);
 	rewind(rom);
@@ -113,8 +117,12 @@ void(*lookup[16])(Vm*) = {
 	opcodeF,
 };
 
+// Single cycle of the vm.
 void vm_cycle(Vm *vm) {
 
+	// The VMs memory is single byte values.
+	// opcodes are two bytes.
+	// We combine the current byte with the next to get a full opcode.
 	vm->inst.opcode = OPCODE(vm->memory[vm->pc], vm->memory[vm->pc+1]);
 
 	// Mask off parts of the instruction.
@@ -125,28 +133,20 @@ void vm_cycle(Vm *vm) {
 	vm->inst.nnn = NNN(vm->inst.opcode);
 	vm->inst.kk = KK(vm->inst.opcode);
 
-	vm->pc += 2; // Pre-increment the counter for the next opcode.
+	vm->pc += 2; // Pre-increment the counter for the next instruction.
 
 	// Execute the instruction.
 	lookup[vm->inst.first](vm);
 
-	// Decrement timers.
+	// Decrement timer.
 	if (vm->delay_timer > 0) {
 		vm->delay_timer--;
-	}
-
-	if (vm->sound_timer > 0) {
-		// PlayAudioStream(vm->audio_stream);
-		ResumeAudioStream(vm->audio_stream);
-		vm->sound_timer--;
-	} else {
-		// StopAudioStream(vm->audio_stream);
-		PauseAudioStream(vm->audio_stream);
 	}
 }
 
 void vm_input_update(Vm *vm) {
 
+	// Keycode values mapped to Chip-8 keypad layout.
 	const uint8_t lookup[] = {
 		88, 49, 50, 51,
 		81, 87, 69, 65,
@@ -154,8 +154,10 @@ void vm_input_update(Vm *vm) {
 		52, 82, 70, 86,
 	};
 	
+	// Currently pressed key.
 	uint8_t key = GetKeyPressed();
 
+	// If current key is in lookup table, update keypad state.
 	for (uint8_t i; i < 16; i++) {
 
 		if (IsKeyPressed(lookup[i])) {
@@ -170,11 +172,11 @@ void vm_update(Vm *vm) {
 
 	while (!WindowShouldClose()) {
 
+		// Pause and resume vm.
 		if (IsKeyPressed(KEY_SPACE)) {
 			vm->state = !vm->state;
 		}
 
-		// Handle input.
 		if (vm->state == RUNNING) {
 
 			for (uint32_t i = 0; i < vm->clock_rate/60; i++) {

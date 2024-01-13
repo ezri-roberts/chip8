@@ -1,7 +1,7 @@
 #ifndef VM_H
 #define VM_H
 
-#include <raylib.h>
+#include "raylib.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -61,18 +61,30 @@ typedef struct Vm {
 	 * ---------------------
 	*/
 	
+	// 16 bool values to track the up or down state of the keypad.
 	bool keypad[16];
+	/*
+	 * The original Chip-8 keypad looks like this.
+	 *
+	 *	1 2 3 C
+	 *	4 5 6 D
+	 *	7 8 9 E
+	 *	A 0 B F
+	 *
+	 *	On a moddern keyboard this gets mapped to:
+	 *
+	 *	1 2 3 4
+	 *	Q W E R
+	 *	A S D F
+	 *	Z X C V
+	*/
 	
 	uint8_t delay_timer; // Decrements when > 0
 	uint8_t sound_timer; // Decrements and plays a tone when > 0
 	
-	uint32_t clock_rate;
+	uint32_t clock_rate; // Used for vm cpu speed.
 
 	Renderer renderer;
-
-	AudioStream audio_stream;
-	AudioCallback audio_callback;
-
 	State state;
 } Vm;
 
@@ -81,9 +93,7 @@ void vm_load_rom(Vm *vm, const char *name);
 void vm_cycle(Vm *vm);
 void vm_update(Vm *vm);
 void vm_input_update(Vm *vm);
-bool vm_input_any(Vm *vm);
 void vm_framebuffer_clear(Vm *vm);
-void vm_audio_callback(void *buffer_data, uint32_t frames);
 
 void instruction_print(Instruction *instr, const char *msg);
 
@@ -103,8 +113,5 @@ void opcodeC(Vm *vm);
 void opcodeD(Vm *vm);
 void opcodeE(Vm *vm);
 void opcodeF(Vm *vm);
-
-void inputCheck(Vm *vm);
-bool inputAny(Vm *vm);
 
 #endif // !VM_H
