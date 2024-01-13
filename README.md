@@ -8,3 +8,7 @@ Graphics done with the [Raylib](https://www.raylib.com/) library.<br>
 `chip8 [ROM file]`
 
 Simply pass in the Chip-8 ROM file you want to run.
+
+![pong](/assets/pong.png)
+![breakout](/assets/breakout.png)
+![ibm](/assets/ibm.png)
