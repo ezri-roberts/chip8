@@ -57,55 +57,7 @@ void vm_init(Vm *vm) {
 	vm->sound_timer = 0;
 	vm->clock_rate = 700;
 
-	// Audio.
-	// Freq is 440hz for middle A
-	
-	InitAudioDevice();
-
-	SetAudioStreamBufferSizeDefault(512);
-	vm->audio_stream = LoadAudioStream(44100, 16, 1);
-	// SetAudioStreamVolume(vm->audio_stream, 3000.0f);
-	SetAudioStreamCallback(vm->audio_stream, vm_audio_callback);
-
-	// PlayAudioStream(vm->audio_stream);
-	PlayAudioStream(vm->audio_stream);
-
 	vm->state = RUNNING;
-}
-
-void vm_audio_callback(void *buffer_data, uint32_t frames) {
-
-	short *data = (short *)buffer_data;
-
-	// sample rate
-	// wave freq
-	const int samples_per_second = 44100;
-	const int tone_hz = 440;
-	const int16_t tone_volume = 4000;
-
-	static uint32_t running_index = 0;
-	const int32_t wave_period = samples_per_second / tone_hz;
-	const int32_t half_wave_period = wave_period / 2;
-
-	const int bytes_per_sample = sizeof(int16_t) * 2;
-
-	int bytes_to_write = 800 * bytes_per_sample;
-	int sample_count = bytes_to_write / bytes_per_sample;
-
-	for (int i = 0; i < sample_count; i++) {
-	
-		int16_t sample_value = ((running_index++ / half_wave_period) % 2) ?
-			tone_volume : -tone_volume;
-		*data++ = sample_value;
-		*data++ = sample_value;
-	}
-
-	// for (int i = 0; i < frames/2; i++) {
-	//
-	// 	data[i] = ((running_index++ / half_wave_period) % 2) ?
-	// 			  8000 : -8000;
-	// }
-
 }
 
 void vm_load_rom(Vm *vm, const char *name) {
@@ -173,7 +125,6 @@ void vm_cycle(Vm *vm) {
 	vm->inst.nnn = NNN(vm->inst.opcode);
 	vm->inst.kk = KK(vm->inst.opcode);
 
-	// printf("ADDR %X | ", vm->pc);
 	vm->pc += 2; // Pre-increment the counter for the next opcode.
 
 	// Execute the instruction.
@@ -224,7 +175,6 @@ void vm_update(Vm *vm) {
 		}
 
 		// Handle input.
-
 		if (vm->state == RUNNING) {
 
 			for (uint32_t i = 0; i < vm->clock_rate/60; i++) {
@@ -236,9 +186,6 @@ void vm_update(Vm *vm) {
 		renderer_update(&vm->renderer, vm->framebuffer);
 	}
 
-	StopAudioStream(vm->audio_stream);
-	UnloadAudioStream(vm->audio_stream);
-	CloseAudioDevice();
 	CloseWindow();
 }
 
