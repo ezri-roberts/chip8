@@ -19,6 +19,10 @@ Try running:
 
 ## Building
 
+Clone the repository.
+
+`git clone git@github.com:ezri-roberts/chip8.git`
+
 The project can be built using make on both Windows and Linux.<br>
 To build simply run:<br>
 

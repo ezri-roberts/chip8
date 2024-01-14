@@ -153,12 +153,9 @@ void vm_input_update(Vm *vm) {
 		83, 68, 90, 67,
 		52, 82, 70, 86,
 	};
-	
-	// Currently pressed key.
-	uint8_t key = GetKeyPressed();
 
 	// If current key is in lookup table, update keypad state.
-	for (uint8_t i; i < 16; i++) {
+	for (uint8_t i = 0; i < 16; i++) {
 
 		if (IsKeyPressed(lookup[i])) {
 			vm->keypad[i] = true;
