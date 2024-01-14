@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stdbool.h>
 
-#include "../renderer/renderer.h"
+#include "renderer.h"
 
 // Combine two bytes into a full opcode.
 #define OPCODE(a, b) ((a << 8) | b)

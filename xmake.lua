@@ -1,8 +1,0 @@
-target("app")
-    set_kind("binary")
-    add_files("src/*.c")
-    add_files("src/vm/*.c")
-    add_files("src/renderer/*.c")
-    add_links("raylib")
-    add_syslinks("GL", "m", "pthread", "dl", "rt", "X11")
-    add_linkdirs("/usr/local/lib")

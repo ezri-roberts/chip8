@@ -14,9 +14,9 @@ Simply pass in the Chip-8 ROM file you want to run.
 
 ## Examples
 
-*Pong*
+**Pong**
 ![pong](/assets/pong.png)
-*Breakout*
+**Breakout**
 ![breakout](/assets/breakout.png)
-*IBM Logo*
+**IBM Logo**
 ![ibm](/assets/ibm.png)
