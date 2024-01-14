@@ -8,9 +8,14 @@ Graphics done with the [Raylib](https://www.raylib.com/) library.<br>
 
 ## Usage
 
+Run the executable and specify a path to a ROM file.
+
 `chip8 [ROM file]`
 
-Simply pass in the Chip-8 ROM file you want to run.
+Some sample ROMS are included.<br>
+Try running:
+
+`chip8 roms/MAZE.ch8`
 
 ## Building
 
