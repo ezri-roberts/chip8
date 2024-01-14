@@ -97,21 +97,21 @@ void vm_framebuffer_clear(Vm *vm);
 
 void instruction_print(Instruction *instr, const char *msg);
 
-void opcodeZero(Vm *vm);
-void opcodeOne(Vm *vm);
-void opcodeTwo(Vm *vm);
-void opcodeThree(Vm *vm);
-void opcodeFour(Vm *vm);
-void opcodeFive(Vm *vm);
-void opcodeSix(Vm *vm);
-void opcodeSeven(Vm *vm);
-void opcodeEight(Vm *vm);
-void opcodeNine(Vm *vm);
-void opcodeA(Vm *vm);
-void opcodeB(Vm *vm);
-void opcodeC(Vm *vm);
-void opcodeD(Vm *vm);
-void opcodeE(Vm *vm);
-void opcodeF(Vm *vm);
+void instruction_zero(Vm *vm);
+void instruction_one(Vm *vm);
+void instruction_two(Vm *vm);
+void instruction_three(Vm *vm);
+void instruction_four(Vm *vm);
+void instruction_five(Vm *vm);
+void instruction_six(Vm *vm);
+void instruction_seven(Vm *vm);
+void instruction_eight(Vm *vm);
+void instruction_nine(Vm *vm);
+void instruction_a(Vm *vm);
+void instruction_b(Vm *vm);
+void instruction_c(Vm *vm);
+void instruction_d(Vm *vm);
+void instruction_e(Vm *vm);
+void instruction_f(Vm *vm);
 
 #endif // !VM_H

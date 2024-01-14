@@ -99,22 +99,22 @@ void vm_load_rom(Vm *vm, const char *name) {
 // Lookup table for instruction execution functions.
 // Indexed by the first nibble of an opcode.
 void(*lookup[16])(Vm*) = {
-	opcodeZero,
-	opcodeOne,
-	opcodeTwo,
-	opcodeThree,
-	opcodeFour,
-	opcodeFive,
-	opcodeSix,
-	opcodeSeven,
-	opcodeEight,
-	opcodeNine,
-	opcodeA,
-	opcodeB,
-	opcodeC,
-	opcodeD,
-	opcodeE,
-	opcodeF,
+	instruction_zero,
+	instruction_one,
+	instruction_two,
+	instruction_three,
+	instruction_four,
+	instruction_five,
+	instruction_six,
+	instruction_seven,
+	instruction_eight,
+	instruction_nine,
+	instruction_a,
+	instruction_b,
+	instruction_c,
+	instruction_d,
+	instruction_e,
+	instruction_f,
 };
 
 // Single cycle of the vm.

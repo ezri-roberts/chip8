@@ -17,37 +17,32 @@ void instruction_print(Instruction *instr, const char *msg) {
 // Execute opcodes starting with 0.
 // 00E0 Clears the screen.
 // 00EE Returns from a subroutine.
-void opcodeZero(Vm *vm) {
+void instruction_zero(Vm *vm) {
 
 	if (vm->inst.kk == 0xE0) {
 
-		instruction_print(&vm->inst, "CLS.");
 		vm_framebuffer_clear(vm);
 	} else if (vm->inst.kk == 0xEE) {
 
-		instruction_print(&vm->inst, "RET.");
 		vm->pc = vm->stack[vm->sp];
 		vm->sp --;
 	}
 }
 
 // Jump to location nnn.
-void opcodeOne(Vm *vm) {
-	instruction_print(&vm->inst, "JP addr.");
+void instruction_one(Vm *vm) {
 	vm->pc = vm->inst.nnn;
 }
 
 // Call subroutine at nnn.
-void opcodeTwo(Vm *vm) {
-	instruction_print(&vm->inst, "CALL addr.");
+void instruction_two(Vm *vm) {
 	vm->sp ++;
 	vm->stack[vm->sp] = vm->pc;
 	vm->pc = vm->inst.nnn;
 }
 
 // Skip next instruction if Vx is equal to kk.
-void opcodeThree(Vm *vm) {
-	instruction_print(&vm->inst, "SE Vx, byte.");
+void instruction_three(Vm *vm) {
 
 	if (vm->V[vm->inst.x] == vm->inst.kk) {
 		vm->pc += 2;
@@ -55,8 +50,7 @@ void opcodeThree(Vm *vm) {
 }
 
 // Skip next instruction if Vx is not equal to kk.
-void opcodeFour(Vm *vm) {
-	instruction_print(&vm->inst, "SNE Vx, byte.");
+void instruction_four(Vm *vm) {
 
 	if (vm->V[vm->inst.x] != vm->inst.kk) {
 		vm->pc += 2;
@@ -64,8 +58,7 @@ void opcodeFour(Vm *vm) {
 }
 
 // Skip next instruction if Vx is equal to Vy.
-void opcodeFive(Vm *vm) {
-	instruction_print(&vm->inst, "SE Vx, Vy.");
+void instruction_five(Vm *vm) {
 
 	if (vm->V[vm->inst.x] == vm->V[vm->inst.y]) {
 
@@ -74,66 +67,55 @@ void opcodeFive(Vm *vm) {
 }
 
 // Set Vx to kk.
-void opcodeSix(Vm *vm) {
-	instruction_print(&vm->inst, "LD Vx, byte.");
+void instruction_six(Vm *vm) {
 
 	vm->V[vm->inst.x] = vm->inst.kk;
 }
 
 // Add kk to Vx.
-void opcodeSeven(Vm *vm) {
-	instruction_print(&vm->inst, "ADD Vx, byte.");
+void instruction_seven(Vm *vm) {
 
 	vm->V[vm->inst.x] += vm->inst.kk;
 }
 
-void opcodeEight(Vm *vm) {
+void instruction_eight(Vm *vm) {
 
 	switch (vm->inst.n) {
 		// Store value of Vy in Vx.
 		case 0x0000:
-			instruction_print(&vm->inst, "LD Vx, Vy.");
 			vm->V[vm->inst.x] = vm->V[vm->inst.y];
 		break;
 		case 0x0001:
-			instruction_print(&vm->inst, "OR Vx, Vy.");
 			vm->V[vm->inst.x] |= vm->V[vm->inst.y];
 		break;
 		case 0x0002:
-			instruction_print(&vm->inst, "AND Vx, Vy.");
 			vm->V[vm->inst.x] &= vm->V[vm->inst.y];
 		break;
 		case 0x0003:
-			instruction_print(&vm->inst, "XOR Vx, Vy.");
 			vm->V[vm->inst.x] ^= vm->V[vm->inst.y];
 		break;
 		case 0x0004:
-			instruction_print(&vm->inst, "ADD Vx, Vy.");
 
 			// uint16_t val = vm->V[vm->inst.x] + vm->V[vm->inst.y];
 			vm->V[vm->inst.x] += vm->V[vm->inst.y];
 			vm->V[0xF] = vm->V[vm->inst.x] > 255;
 		break;
 		case 0x0005:
-			instruction_print(&vm->inst, "SUB Vx, Vy.");
 
 			vm->V[0xF] = vm->V[vm->inst.x] > vm->V[vm->inst.y];
 			vm->V[vm->inst.x] -= vm->V[vm->inst.y];
 		break;
 		case 0x0006:
-			instruction_print(&vm->inst, "SHR Vx {, Vy}.");
 
 			vm->V[0xF] = vm->V[vm->inst.x] & 1;
 			vm->V[vm->inst.x] >>= 1;
 		break;
 		case 0x0007:
-			instruction_print(&vm->inst, "SUBN Vx, Vy.");
 
 			vm->V[0xF] = vm->V[vm->inst.y] > vm->V[vm->inst.x];
 			vm->V[vm->inst.x] = vm->V[vm->inst.y] - vm->V[vm->inst.x];
 		break;
 		case 0x000E:
-			instruction_print(&vm->inst, "SHL Vx {, Vy}.");
 
 			vm->V[0xF] = (vm->V[vm->inst.x] & 0x80) >> 7;
 			vm->V[vm->inst.x] <<= 1;
@@ -141,32 +123,27 @@ void opcodeEight(Vm *vm) {
 	}
 }
 
-void opcodeNine(Vm *vm) {
-	instruction_print(&vm->inst, "SNE Vx, Vy.");
+void instruction_nine(Vm *vm) {
 
 	if (vm->V[vm->inst.x] != vm->V[vm->inst.y]) {
 		vm->pc += 2;
 	}
 }
 
-void opcodeA(Vm *vm) {
-	instruction_print(&vm->inst, "LD I, addr.");
+void instruction_a(Vm *vm) {
 	vm->I = vm->inst.nnn;
 }
 
-void opcodeB(Vm *vm) {
-	instruction_print(&vm->inst, "JP V0, addr.");
+void instruction_b(Vm *vm) {
 	vm->pc = vm->inst.nnn + vm->V[0];
 }
 
-void opcodeC(Vm *vm) {
-	instruction_print(&vm->inst, "RND Vx, byte.");
+void instruction_c(Vm *vm) {
 	vm->V[vm->inst.x] = (rand() % 256) & vm->inst.kk;
 }
 
-void opcodeD(Vm *vm) {
+void instruction_d(Vm *vm) {
 
-	instruction_print(&vm->inst, "DRW Vx, Vy, nibble.");
 
 	const uint8_t x_coord = vm->V[vm->inst.x];
 	const uint8_t y_coord = vm->V[vm->inst.y];
@@ -194,18 +171,16 @@ void opcodeD(Vm *vm) {
 	}
 }
 
-void opcodeE(Vm *vm) {
+void instruction_e(Vm *vm) {
 
 	switch (vm->inst.kk) {
 		case 0x009E:
-			instruction_print(&vm->inst, "SKP Vx.");
 
 			if (vm->keypad[vm->V[vm->inst.x]]) {
 				vm->pc += 2;
 			}
 		break;
 		case 0x0A1:
-			instruction_print(&vm->inst, "SKNP Vx.");
 
 			if (!vm->keypad[vm->V[vm->inst.x]]) {
 				vm->pc += 2;
@@ -214,16 +189,14 @@ void opcodeE(Vm *vm) {
 	}
 }
 
-void opcodeF(Vm *vm) {
+void instruction_f(Vm *vm) {
 
 	switch (vm->inst.kk) {
 		case 0x0007:
-			instruction_print(&vm->inst, "LD Vx, DT.");
 
 			vm->V[vm->inst.x] = vm->delay_timer;
 		break;
-		case 0x000A:
-			instruction_print(&vm->inst, "LD VX, K.");
+		case 0x000A: {
 
 			bool key_pressed = false;
 			uint8_t key;
@@ -241,29 +214,26 @@ void opcodeF(Vm *vm) {
 			} else {
 				vm->pc -= 2;
 			}
-		break;
+
+			break;
+		}
 		case 0x0015:
-			instruction_print(&vm->inst, "LD DT, Vx.");
 
 			vm->delay_timer = vm->V[vm->inst.x];
 		break;
 		case 0x0018:
-			instruction_print(&vm->inst, "LD ST, Vx.");
 
 			vm->sound_timer = vm->V[vm->inst.x];
 		break;
 		case 0x001E:
-			instruction_print(&vm->inst, "ADD I, Vx.");
 
 			vm->I += vm->V[vm->inst.x];
 		break;
 		case 0x0029:
-			instruction_print(&vm->inst, "LD F, Vx.");
 
 			vm->I = vm->V[vm->inst.x] * 5;
 		break;
-		case 0x0033:
-			instruction_print(&vm->inst, "LD B, Vx.");
+		case 0x0033: {
 
 			uint8_t bcd = vm->V[vm->inst.x];
 
@@ -273,16 +243,15 @@ void opcodeF(Vm *vm) {
 			bcd /= 10;
 			vm->memory[vm->I] = bcd;
 
-		break;
+			break;
+		}
 		case 0x0055:
-			instruction_print(&vm->inst, "LD [I], Vx.");
 
 			for (uint8_t i = 0; i <= vm->inst.x; i++) {
 				vm->memory[vm->I++] = vm->V[i];
 			}
 		break;
 		case 0x0065:
-			instruction_print(&vm->inst, "LD Vx, [I].");
 
 			for (uint8_t i = 0; i <= vm->inst.x; i++) {
 				vm->V[i] = vm->memory[vm->I++];
