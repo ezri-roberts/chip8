@@ -3,31 +3,30 @@ OPT = -O1
 CFLAGS = -Wall -Wextra -std=c99 $(OPT) -I include/
 
 ifeq ($(OS), Windows_NT)
-	RM_BIN = @del /S /Q bin
-	RM_OBJ = @del /S /Q obj
+	MKDIR = @mkdir
+	RM = @rmdir /s /q
 	LIBS = -L lib/ -lraylib_win -lgdi32 -lwinmm
 	BIN = out.exe
-else
-	RM_BIN = @rm -r bin/
-	RM_OBJ = @rm -r obj/
+else # Linux
 	MKDIR = @mkdir -p
+	RM = @rm -r
 	LIBS = -L lib/ -lraylib_linux -lGL -lm -lpthread -ldl -lrt -lX11
 	BIN = out
 endif
 
-OUT_DIR = bin
+BIN_DIR = bin
 OBJ_DIR = obj
 
 OBJS = main.o vm.o opcode.o renderer.o
 
-all: create_dir $(OUT_DIR)/$(BIN)
+all: create_dir $(BIN_DIR)/$(BIN)
 
 create_dir:
 	$(MKDIR) bin
 	$(MKDIR) obj
 
 # Create executable.
-$(OUT_DIR)/$(BIN): $(addprefix $(OBJ_DIR)/,$(OBJS))
+$(BIN_DIR)/$(BIN): $(addprefix $(OBJ_DIR)/,$(OBJS))
 	$(CC) $(LIBS) -o $@ $^ $(LIBS)
 
 # Create object files.
@@ -35,6 +34,6 @@ $(addprefix $(OBJ_DIR),/%.o):src/%.c
 	$(CC) $(CFLAGS) -c -o $@ $^
 
 clean:
-	$(RM_BIN)
-	$(RM_OBJ)
+	$(RM) bin
+	$(RM) obj
 
