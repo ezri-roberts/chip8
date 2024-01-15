@@ -8,8 +8,9 @@ ifeq ($(OS), Windows_NT)
 	LIBS = -L lib/ -lraylib_win -lgdi32 -lwinmm
 	BIN = out.exe
 else
-	RM_BIN = @rm -r bin/*
-	RM_OBJ = @rm -r obj/*
+	RM_BIN = @rm -r bin/
+	RM_OBJ = @rm -r obj/
+	MKDIR = @mkdir -p
 	LIBS = -L lib/ -lraylib_linux -lGL -lm -lpthread -ldl -lrt -lX11
 	BIN = out
 endif
@@ -19,7 +20,11 @@ OBJ_DIR = obj
 
 OBJS = main.o vm.o opcode.o renderer.o
 
-all: $(OUT_DIR)/$(BIN)
+all: create_dir $(OUT_DIR)/$(BIN)
+
+create_dir:
+	$(MKDIR) bin
+	$(MKDIR) obj
 
 # Create executable.
 $(OUT_DIR)/$(BIN): $(addprefix $(OBJ_DIR)/,$(OBJS))
