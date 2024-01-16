@@ -2,7 +2,9 @@
 ![logo](/assets/logo.png)
 
 ![C99](https://img.shields.io/badge/C99-blue?style=for-the-badge&logo=C&logoColor=white)
-![Raylib](https://img.shields.io/badge/raylib-green?style=for-the-badge&logo=raylib&logoColor=white)
+![Raylib](https://img.shields.io/badge/raylib-green?style=for-the-badge&logo=raylib&logoColor=white)<br>
+![Linux Status](https://img.shields.io/github/actions/workflow/status/ezri-roberts/chip8/linux.yml?style=for-the-badge&logo=github&label=linux)
+![Windows Status](https://img.shields.io/github/actions/workflow/status/ezri-roberts/chip8/windows.yml?style=for-the-badge&logo=github&label=windows)
 
 # CHIP-8 Emulator
 
