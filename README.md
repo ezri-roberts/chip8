@@ -1,6 +1,9 @@
 
 ![logo](/assets/logo.png)
 
+![C99](https://img.shields.io/badge/C99-blue?style=for-the-badge&logo=C&logoColor=white)
+![Raylib](https://img.shields.io/badge/raylib-green?style=for-the-badge&logo=raylib&logoColor=white)
+
 # CHIP-8 Emulator
 
 A [CHIP-8](https://en.wikipedia.org/wiki/CHIP-8) emulator written in C.<br>
