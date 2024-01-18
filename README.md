@@ -17,21 +17,23 @@ Run the executable and specify a path to a ROM file.
 
 `chip8 [ROM file]`
 
-Some sample ROMS are included.<br>
+Some sample ROMs are included.<br>
 Try running:
 
 `chip8 roms/MAZE.ch8`
 
 ## Building
 
+> Requires Make and a C compiler such as GCC.
+
 Clone the repository.
 
-`git clone git@github.com:ezri-roberts/chip8.git`
+`git clone https://github.com/ezri-roberts/chip8.git`
 
 The project can be built using make on both Windows and Linux.<br>
 To build simply run:<br>
 
-`make all` 
+`make all`
 
 To remove built files:
 
